@@ -1,0 +1,29 @@
+# Dependencies
+frontend/node_modules/
+backend/bin/
+backend/obj/
+
+# Build outputs
+*.exe
+*.dll
+*.pdb
+*.runtimeconfig.json
+*.deps.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
