@@ -33,7 +33,7 @@ npm start
 - Transparent overlay window showing Watts
 - Mock data for testing (random power values)
 - Always-on-top positioning
-- Cross-platform (Electron + .NET)
+- Electron + .NET (Windows only for bluetooth reasons)
 
 ## Architecture
 
