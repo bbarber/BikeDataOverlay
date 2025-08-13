@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet run:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(dotnet build)",
+      "Bash(dotnet remove:*)",
+      "Bash(move:*)",
+      "Bash(mv:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "WebFetch(domain:learn.microsoft.com)",
+      "WebFetch(domain:www.nuget.org)",
+      "Bash(del \"Services\\Bluetooth\\PluginBleDeviceScanner.cs\")",
+      "Bash(del \"Services\\Bluetooth\\PluginBleDevice.cs\")",
+      "Bash(rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

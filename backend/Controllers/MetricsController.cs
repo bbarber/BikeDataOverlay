@@ -92,4 +92,42 @@ public class MetricsController : ControllerBase
             });
         }
     }
+    
+    [HttpGet("devices/scan")]
+    public async Task<ActionResult<object>> ScanForBluetoothDevices()
+    {
+        try
+        {
+            var devices = await _bluetoothService.ScanForDevicesAsync();
+            return new
+            {
+                Success = true,
+                DeviceCount = devices.Count,
+                Devices = devices.Select(d => new
+                {
+                    Id = d.DeviceId,
+                    Name = d.Name,
+                    IsConnected = d.IsConnected,
+                    DeviceInfo = d.DeviceInfo != null ? new
+                    {
+                        d.DeviceInfo.ManufacturerName,
+                        d.DeviceInfo.ModelNumber,
+                        d.DeviceInfo.SerialNumber,
+                        d.DeviceInfo.FirmwareRevision
+                    } : null
+                }).ToArray(),
+                Message = $"Found {devices.Count} Bluetooth fitness devices"
+            };
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                Success = false,
+                DeviceCount = 0,
+                Devices = Array.Empty<object>(),
+                Message = $"Scan error: {ex.Message}"
+            });
+        }
+    }
 }

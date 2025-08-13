@@ -18,6 +18,10 @@ public class BluetoothTrainerService : IDisposable
     private TrainerData _currentTrainerData = new();
     private DeviceInformation? _deviceInfo;
     
+    // Real Bluetooth scanning components
+    private IBleDeviceScanner? _deviceScanner;
+    private readonly List<IBleDevice> _discoveredDevices = new();
+    
     public event EventHandler<CyclingMetrics>? MetricsUpdated;
     public event EventHandler<bool>? ConnectionStatusChanged;
     
@@ -216,17 +220,107 @@ public class BluetoothTrainerService : IDisposable
         }
     }
     
+    public async Task<List<IBleDevice>> ScanForDevicesAsync(TimeSpan? timeout = null)
+    {
+        try
+        {
+            Console.WriteLine("Starting Bluetooth device scan...");
+            Console.WriteLine($"Scan timeout: {timeout?.TotalSeconds ?? 15} seconds");
+            
+            // Create a real scanner for production use
+            _deviceScanner?.Dispose();
+            _deviceScanner = new WindowsBleDeviceScanner();
+            
+            if (timeout.HasValue)
+            {
+                _deviceScanner.ScanTimeout = timeout.Value;
+            }
+            
+            _discoveredDevices.Clear();
+            
+            var scanCompleted = false;
+            var devicesFound = 0;
+            string? errorMessage = null;
+            
+            // Set up event handlers
+            _deviceScanner.DeviceDiscovered += (sender, e) =>
+            {
+                _discoveredDevices.Add(e.Device);
+                Console.WriteLine($"Device discovered: {e.Device.Name} (Signal: {e.SignalStrength} dBm)");
+            };
+            
+            _deviceScanner.ScanCompleted += (sender, e) =>
+            {
+                devicesFound = e.DevicesFound;
+                errorMessage = e.ErrorMessage;
+                scanCompleted = true;
+                
+                if (!string.IsNullOrEmpty(e.ErrorMessage))
+                {
+                    Console.WriteLine($"Scan completed with error: {e.ErrorMessage}");
+                }
+                else
+                {
+                    Console.WriteLine($"Scan completed successfully. Found {devicesFound} devices.");
+                }
+            };
+            
+            // Start scanning
+            await _deviceScanner.StartScanAsync();
+            
+            // Wait for scan to complete
+            var maxWaitTime = timeout ?? TimeSpan.FromSeconds(15);
+            var waitStart = DateTime.UtcNow;
+            
+            while (!scanCompleted && DateTime.UtcNow - waitStart < maxWaitTime)
+            {
+                await Task.Delay(100);
+            }
+            
+            // Ensure scan is stopped
+            if (_deviceScanner.IsScanning)
+            {
+                await _deviceScanner.StopScanAsync();
+            }
+            
+            Console.WriteLine($"Bluetooth scan finished. Found {_discoveredDevices.Count} fitness devices.");
+            
+            // If we have an error, log it and throw exception
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                Console.WriteLine($"Bluetooth scan completed with error: {errorMessage}");
+                throw new InvalidOperationException($"Bluetooth scan failed: {errorMessage}");
+            }
+            
+            return new List<IBleDevice>(_discoveredDevices);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during Bluetooth scan: {ex.Message}");
+            throw;
+        }
+    }
+    
+
     public void Dispose()
     {
         try
         {
             _connectionCheckTimer?.Dispose();
+            _deviceScanner?.Dispose();
             
             // Disconnect from any connected device
             if (_isConnected)
             {
                 DisconnectAsync().Wait(TimeSpan.FromSeconds(2));
             }
+            
+            // Dispose discovered devices
+            foreach (var device in _discoveredDevices)
+            {
+                device?.Dispose();
+            }
+            _discoveredDevices.Clear();
             
             _isConnected = false;
             Console.WriteLine("BluetoothTrainerService disposed");
