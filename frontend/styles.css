@@ -88,10 +88,20 @@ body {
     font-size: 14px;
     transition: background 0.2s;
     z-index: 10;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-.toggle-btn:hover {
+.toggle-btn:hover,
+.toggle-btn:focus {
     background: rgba(255, 255, 255, 0.2);
+    outline: none;
+}
+
+.toggle-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
 }
 
 .device-panel-content {

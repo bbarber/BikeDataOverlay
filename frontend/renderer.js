@@ -29,18 +29,6 @@ function stopMetricsUpdates() {
     }
 }
 
-function toggleDevicePanel() {
-    devicePanelVisible = !devicePanelVisible;
-    const panel = document.getElementById('devicePanel');
-    
-    if (devicePanelVisible) {
-        panel.classList.add('visible');
-        loadDeviceList();
-    } else {
-        panel.classList.remove('visible');
-    }
-}
-
 async function scanForDevices() {
     if (isScanning) return;
     
@@ -56,17 +44,21 @@ async function scanForDevices() {
         const response = await axios.get(`${API_BASE_URL}/metrics/devices/list`);
         const data = response.data;
         
-        if (data.Success) {
-            statusEl.textContent = data.Message;
-            displayDevices(data.Devices);
+        if (data.success || data.Success) {
+            statusEl.textContent = data.message || data.Message;
+            displayDevices(data.devices || data.Devices || []);
         } else {
-            statusEl.textContent = `Scan failed: ${data.Message}`;
+            statusEl.textContent = `Scan failed: ${data.message || data.Message}`;
             displayDevices([]);
         }
         
     } catch (error) {
         console.error('Failed to scan for devices:', error);
-        statusEl.textContent = `Scan error: ${error.message}`;
+        if (error.response && error.response.data && error.response.data.message) {
+            statusEl.textContent = `Scan error: ${error.response.data.message}`;
+        } else {
+            statusEl.textContent = `Scan error: ${error.message}`;
+        }
         displayDevices([]);
     } finally {
         isScanning = false;
@@ -84,18 +76,23 @@ async function loadDeviceList() {
         const response = await axios.get(`${API_BASE_URL}/metrics/devices/list`);
         const data = response.data;
         
-        if (data.Success) {
-            statusEl.textContent = data.Message;
-            displayDevices(data.Devices);
+        if (data.success || data.Success) {
+            statusEl.textContent = data.message || data.Message;
+            displayDevices(data.devices || data.Devices || []);
         } else {
-            statusEl.textContent = data.Message;
+            statusEl.textContent = data.message || data.Message;
             displayDevices([]);
         }
         
     } catch (error) {
         console.error('Failed to load device list:', error);
-        statusEl.textContent = 'Ready to scan';
+        if (error.response && error.response.status === 400) {
+            statusEl.textContent = 'Bluetooth scan error - try refreshing';
+        } else {
+            statusEl.textContent = 'Backend not available - click "Scan for Devices" when ready';
+        }
         displayDevices([]);
+        // Don't re-throw the error so the panel stays visible
     }
 }
 
@@ -108,23 +105,31 @@ function displayDevices(devices) {
     }
     
     deviceList.innerHTML = devices.map(device => {
-        const statusClass = device.IsConnected ? 'connected' : 'available';
-        const connectBtnText = device.IsConnected ? 'Connected' : 'Connect';
-        const connectBtnDisabled = device.IsConnected || !device.CanConnect;
+        const isConnected = device.isConnected || device.IsConnected;
+        const canConnect = device.canConnect !== undefined ? device.canConnect : device.CanConnect;
+        const statusClass = isConnected ? 'connected' : 'available';
+        const connectBtnText = isConnected ? 'Connected' : 'Connect';
+        const connectBtnDisabled = isConnected || !canConnect;
+        
+        const deviceName = device.name || device.Name;
+        const deviceType = device.type || device.Type;
+        const deviceStatus = device.status || device.Status;
+        const deviceId = device.id || device.Id;
+        const deviceInfo = device.deviceInfo || device.DeviceInfo;
         
         return `
             <div class="device-item">
-                <div class="device-name">${device.Name}</div>
+                <div class="device-name">${deviceName}</div>
                 <div class="device-info">
-                    <span class="device-type">${device.Type}</span>
-                    <span class="device-status-badge ${statusClass}">${device.Status}</span>
+                    <span class="device-type">${deviceType}</span>
+                    <span class="device-status-badge ${statusClass}">${deviceStatus}</span>
                 </div>
                 <div class="device-details">
-                    ${device.DeviceInfo.Manufacturer} ${device.DeviceInfo.Model} (${device.DeviceInfo.Type})
+                    ${deviceInfo.manufacturer || deviceInfo.Manufacturer || 'Unknown'} ${deviceInfo.model || deviceInfo.Model || 'Unknown'} (${deviceInfo.type || deviceInfo.Type || 'Unknown'})
                 </div>
                 <div class="device-actions">
                     <button class="btn-connect" ${connectBtnDisabled ? 'disabled' : ''} 
-                            onclick="connectToDevice('${device.Id}')">
+                            onclick="connectToDevice('${deviceId}')">
                         ${connectBtnText}
                     </button>
                 </div>
@@ -142,11 +147,11 @@ async function connectToDevice(deviceId) {
         const response = await axios.post(`${API_BASE_URL}/metrics/connection/connect`);
         const data = response.data;
         
-        if (data.Success) {
-            statusEl.textContent = data.Message;
+        if (data.success || data.Success) {
+            statusEl.textContent = data.message || data.Message;
             loadDeviceList(); // Refresh the device list
         } else {
-            statusEl.textContent = `Connection failed: ${data.Message}`;
+            statusEl.textContent = `Connection failed: ${data.message || data.Message}`;
         }
         
     } catch (error) {
@@ -155,19 +160,55 @@ async function connectToDevice(deviceId) {
     }
 }
 
-function initializeDevicePanel() {
-    const toggleBtn = document.getElementById('toggleDevicePanel');
-    const scanBtn = document.getElementById('scanDevicesBtn');
-    const refreshBtn = document.getElementById('refreshDevicesBtn');
+function toggleDevicePanel() {
+    const devicePanel = document.getElementById('devicePanel');
+    devicePanelVisible = !devicePanelVisible;
     
-    toggleBtn.addEventListener('click', toggleDevicePanel);
-    scanBtn.addEventListener('click', scanForDevices);
-    refreshBtn.addEventListener('click', loadDeviceList);
+    console.log('Toggling device panel, visible:', devicePanelVisible);
+    
+    if (devicePanelVisible) {
+        devicePanel.classList.add('visible');
+        console.log('Device panel should now be visible');
+        console.log('Panel classes:', devicePanel.className);
+        console.log('Panel display style:', window.getComputedStyle(devicePanel).display);
+        // Try to load devices, but don't block panel visibility
+        loadDeviceList().catch(error => {
+            console.warn('Failed to load device list, but panel remains visible:', error);
+        });
+    } else {
+        devicePanel.classList.remove('visible');
+        console.log('Device panel hidden');
+        console.log('Panel classes:', devicePanel.className);
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('toggleDevicePanel');
+    
+    // Add event listeners with fallback for mouse events
+    toggleBtn.addEventListener('click', toggleDevicePanel);
+    
+    // Force enable mouse events when hovering over the toggle button
+    toggleBtn.addEventListener('mouseenter', () => {
+        if (typeof require !== 'undefined') {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('set-ignore-mouse-events', false);
+            console.log('Toggle button mouseenter - enabling mouse events');
+        }
+    });
+    
+    // Add extra click handler as fallback
+    toggleBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Toggle button mousedown triggered');
+        toggleDevicePanel();
+    });
+    
+    document.getElementById('scanDevicesBtn').addEventListener('click', scanForDevices);
+    document.getElementById('refreshDevicesBtn').addEventListener('click', loadDeviceList);
+    
     setTimeout(startMetricsUpdates, 2000);
-    initializeDevicePanel();
 });
 
 window.addEventListener('beforeunload', stopMetricsUpdates);
