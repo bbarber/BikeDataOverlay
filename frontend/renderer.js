@@ -184,11 +184,17 @@ function toggleDevicePanel() {
 
 window.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('toggleDevicePanel');
+    const devicePanel = document.getElementById('devicePanel');
     
-    // Add event listeners with fallback for mouse events
-    toggleBtn.addEventListener('click', toggleDevicePanel);
+    // Use a single, clean click handler
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Toggle button clicked');
+        toggleDevicePanel();
+    });
     
-    // Force enable mouse events when hovering over the toggle button
+    // Force enable mouse events when hovering over the toggle button or device panel
     toggleBtn.addEventListener('mouseenter', () => {
         if (typeof require !== 'undefined') {
             const { ipcRenderer } = require('electron');
@@ -197,12 +203,13 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Add extra click handler as fallback
-    toggleBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Toggle button mousedown triggered');
-        toggleDevicePanel();
+    // Also enable mouse events when hovering over the device panel
+    devicePanel.addEventListener('mouseenter', () => {
+        if (typeof require !== 'undefined') {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('set-ignore-mouse-events', false);
+            console.log('Device panel mouseenter - enabling mouse events');
+        }
     });
     
     document.getElementById('scanDevicesBtn').addEventListener('click', scanForDevices);

@@ -42,7 +42,8 @@ public class WindowsBleDeviceScanner : IBleDeviceScanner
     {
         if (IsScanning)
         {
-            return;
+            Console.WriteLine("Scan already in progress, waiting for completion...");
+            await StopScanAsync();
         }
 
         try
@@ -51,10 +52,19 @@ public class WindowsBleDeviceScanner : IBleDeviceScanner
             Console.WriteLine($"Scan timeout: {ScanTimeout.TotalSeconds} seconds");
 
             _discoveredDevices.Clear();
+            _scanCancellationTokenSource?.Cancel();
+            _scanCancellationTokenSource?.Dispose();
             _scanCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _scanCompletionSource = new TaskCompletionSource<bool>();
 
             IsScanning = true;
+
+            // Ensure watcher is stopped before starting
+            if (_watcher.Status == BluetoothLEAdvertisementWatcherStatus.Started)
+            {
+                _watcher.Stop();
+                await Task.Delay(100); // Small delay to ensure proper shutdown
+            }
 
             // Start the watcher
             _watcher.Start();

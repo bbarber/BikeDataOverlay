@@ -21,6 +21,7 @@ public class BluetoothTrainerService : IDisposable
     // Real Bluetooth scanning components
     private IBleDeviceScanner? _deviceScanner;
     private readonly List<IBleDevice> _discoveredDevices = new();
+    private IBleDevice? _connectedDevice;
     
     public event EventHandler<CyclingMetrics>? MetricsUpdated;
     public event EventHandler<bool>? ConnectionStatusChanged;
@@ -45,10 +46,7 @@ public class BluetoothTrainerService : IDisposable
     {
         try
         {
-            Console.WriteLine("=== FTMS Trainer Connection Simulation ===");
-            Console.WriteLine("NOTE: Real BLE implementation requires platform-specific libraries.");
-            Console.WriteLine("This simulation demonstrates FTMS protocol data structures.");
-            Console.WriteLine();
+            Console.WriteLine("=== Real Bluetooth FTMS Trainer Connection ===");
             
             // Ensure we're not already connected
             if (_isConnected)
@@ -57,21 +55,74 @@ public class BluetoothTrainerService : IDisposable
                 return true;
             }
 
-            Console.WriteLine("Simulating BLE scan for FTMS devices...");
-            await Task.Delay(1000, cancellationToken); // Simulate scanning time
+            // Disconnect any existing device first
+            if (_connectedDevice != null)
+            {
+                await _connectedDevice.DisconnectAsync();
+                _connectedDevice = null;
+            }
+
+            Console.WriteLine("Scanning for FTMS devices...");
+            var devices = await ScanForDevicesAsync(TimeSpan.FromSeconds(10));
             
-            Console.WriteLine("Found simulated FTMS device: Wahoo KICKR CORE (RSSI: -45 dBm)");
-            await Task.Delay(500, cancellationToken);
+            if (!devices.Any())
+            {
+                Console.WriteLine("No FTMS devices found. Falling back to simulation mode.");
+                return await StartSimulationMode(cancellationToken);
+            }
+
+            // Try to connect to the first available device
+            var targetDevice = devices.First();
+            Console.WriteLine($"Attempting to connect to: {targetDevice.Name}");
             
-            Console.WriteLine("Connecting to simulated trainer...");
-            await Task.Delay(1000, cancellationToken); // Simulate connection time
+            var connected = await targetDevice.ConnectAsync(cancellationToken);
+            if (!connected)
+            {
+                Console.WriteLine($"Failed to connect to {targetDevice.Name}. Falling back to simulation mode.");
+                return await StartSimulationMode(cancellationToken);
+            }
+
+            _connectedDevice = targetDevice;
+            _isConnected = true;
+            _connectedDeviceName = targetDevice.Name;
+            _deviceInfo = targetDevice.DeviceInfo;
+
+            // Set up data reception from real device
+            _connectedDevice.DataReceived += OnRealDeviceDataReceived;
+            _connectedDevice.ConnectionChanged += OnDeviceConnectionChanged;
+
+            // Start notifications for real data
+            var notificationsStarted = await _connectedDevice.StartNotificationsAsync(cancellationToken);
+            if (!notificationsStarted)
+            {
+                Console.WriteLine("Failed to start notifications, but connection is established");
+            }
+            
+            ConnectionStatusChanged?.Invoke(this, true);
+            Console.WriteLine($"Successfully connected to real FTMS trainer: {_connectedDeviceName}");
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Real connection failed: {ex.Message}");
+            Console.WriteLine("Falling back to simulation mode.");
+            return await StartSimulationMode(cancellationToken);
+        }
+    }
+
+    private async Task<bool> StartSimulationMode(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Console.WriteLine("Starting FTMS simulation mode...");
             
             // Create simulated device information using real FTMS structures
             _deviceInfo = new DeviceInformation
             {
-                ManufacturerName = "Wahoo Fitness",
+                ManufacturerName = "Simulated",
                 ModelNumber = "KICKR CORE",
-                SerialNumber = "WF-KC-2024-001",
+                SerialNumber = "SIM-KC-2024-001",
                 FirmwareRevision = "4.2.1",
                 MachineType = FitnessMachineType.IndoorBike,
                 SupportedFeatures = FitnessMachineFeatures.PowerMeasurementSupported |
@@ -80,23 +131,20 @@ public class BluetoothTrainerService : IDisposable
             };
             
             _connectedDeviceName = $"{_deviceInfo.ManufacturerName} {_deviceInfo.ModelNumber}";
-            Console.WriteLine($"Device Info - {_connectedDeviceName} (FW: {_deviceInfo.FirmwareRevision})");
-            Console.WriteLine($"Supported FTMS Features: Power={_deviceInfo.SupportsFeature(FitnessMachineFeatures.PowerMeasurementSupported)}, " +
-                             $"Cadence={_deviceInfo.SupportsFeature(FitnessMachineFeatures.CadenceSupported)}");
+            Console.WriteLine($"Simulation Device Info - {_connectedDeviceName} (FW: {_deviceInfo.FirmwareRevision})");
             
             // Start receiving simulated FTMS data
             StartFtmsDataSimulation();
             
             _isConnected = true;
             ConnectionStatusChanged?.Invoke(this, true);
-            Console.WriteLine($"Successfully connected to simulated FTMS trainer: {_connectedDeviceName}");
-            Console.WriteLine("Receiving realistic FTMS Indoor Bike Data...");
+            Console.WriteLine($"Successfully started simulation mode: {_connectedDeviceName}");
             
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Connection failed: {ex.Message}");
+            Console.WriteLine($"Simulation mode failed: {ex.Message}");
             _isConnected = false;
             _connectedDeviceName = null;
             ConnectionStatusChanged?.Invoke(this, false);
@@ -177,10 +225,54 @@ public class BluetoothTrainerService : IDisposable
         });
     }
     
+    private void OnRealDeviceDataReceived(object? sender, TrainerDataEventArgs e)
+    {
+        try
+        {
+            // Convert trainer data to cycling metrics
+            _currentMetrics = e.Data.ToCyclingMetrics();
+            MetricsUpdated?.Invoke(this, _currentMetrics);
+            
+            Console.WriteLine($"Real Device Data - Power: {e.Data.Power}W, " +
+                            $"Cadence: {e.Data.Cadence}RPM, " +
+                            $"Speed: {e.Data.Speed:F1}km/h");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing real device data: {ex.Message}");
+        }
+    }
+
+    private void OnDeviceConnectionChanged(object? sender, BleConnectionEventArgs e)
+    {
+        try
+        {
+            if (!e.IsConnected)
+            {
+                Console.WriteLine($"Device {e.DeviceName} disconnected: {e.ErrorMessage}");
+                _isConnected = false;
+                _connectedDeviceName = null;
+                _connectedDevice = null;
+                ConnectionStatusChanged?.Invoke(this, false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error handling connection change: {ex.Message}");
+        }
+    }
+
     private void CheckConnection(object? state)
     {
-        // Connection status is maintained internally for now
-        // In a real implementation, this would check the actual Bluetooth connection
+        // Check if real device is still connected
+        if (_connectedDevice != null && !_connectedDevice.IsConnected)
+        {
+            Console.WriteLine("Real device connection lost, updating status");
+            _isConnected = false;
+            _connectedDeviceName = null;
+            _connectedDevice = null;
+            ConnectionStatusChanged?.Invoke(this, false);
+        }
     }
     
     public CyclingMetrics GetCurrentMetrics()
@@ -201,17 +293,23 @@ public class BluetoothTrainerService : IDisposable
         {
             if (_isConnected)
             {
-                Console.WriteLine($"Disconnecting from simulated trainer: {_connectedDeviceName}");
+                Console.WriteLine($"Disconnecting from trainer: {_connectedDeviceName}");
+                
+                // Disconnect real device if connected
+                if (_connectedDevice != null)
+                {
+                    _connectedDevice.DataReceived -= OnRealDeviceDataReceived;
+                    _connectedDevice.ConnectionChanged -= OnDeviceConnectionChanged;
+                    await _connectedDevice.DisconnectAsync();
+                    _connectedDevice = null;
+                }
                 
                 _isConnected = false;
                 _connectedDeviceName = null;
                 _deviceInfo = null;
                 
-                // Simulate disconnect time
-                await Task.Delay(300);
-                
                 ConnectionStatusChanged?.Invoke(this, false);
-                Console.WriteLine("Simulated trainer disconnected successfully");
+                Console.WriteLine("Trainer disconnected successfully");
             }
         }
         catch (Exception ex)
@@ -227,8 +325,25 @@ public class BluetoothTrainerService : IDisposable
             Console.WriteLine("Starting Bluetooth device scan...");
             Console.WriteLine($"Scan timeout: {timeout?.TotalSeconds ?? 15} seconds");
             
-            // Create a real scanner for production use
-            _deviceScanner?.Dispose();
+            // Properly dispose existing scanner if present to avoid conflicts
+            if (_deviceScanner != null)
+            {
+                try
+                {
+                    if (_deviceScanner.IsScanning)
+                    {
+                        await _deviceScanner.StopScanAsync();
+                    }
+                    _deviceScanner.Dispose();
+                }
+                catch (Exception disposeEx)
+                {
+                    Console.WriteLine($"Warning: Error disposing previous scanner: {disposeEx.Message}");
+                }
+                _deviceScanner = null;
+            }
+            
+            // Create a new scanner for this operation
             _deviceScanner = new WindowsBleDeviceScanner();
             
             if (timeout.HasValue)
@@ -245,23 +360,39 @@ public class BluetoothTrainerService : IDisposable
             // Set up event handlers
             _deviceScanner.DeviceDiscovered += (sender, e) =>
             {
-                _discoveredDevices.Add(e.Device);
-                Console.WriteLine($"Device discovered: {e.Device.Name} (Signal: {e.SignalStrength} dBm)");
+                try
+                {
+                    _discoveredDevices.Add(e.Device);
+                    Console.WriteLine($"Device discovered: {e.Device.Name} (Signal: {e.SignalStrength} dBm)");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing discovered device: {ex.Message}");
+                }
             };
             
             _deviceScanner.ScanCompleted += (sender, e) =>
             {
-                devicesFound = e.DevicesFound;
-                errorMessage = e.ErrorMessage;
-                scanCompleted = true;
-                
-                if (!string.IsNullOrEmpty(e.ErrorMessage))
+                try
                 {
-                    Console.WriteLine($"Scan completed with error: {e.ErrorMessage}");
+                    devicesFound = e.DevicesFound;
+                    errorMessage = e.ErrorMessage;
+                    scanCompleted = true;
+                    
+                    if (!string.IsNullOrEmpty(e.ErrorMessage))
+                    {
+                        Console.WriteLine($"Scan completed with error: {e.ErrorMessage}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Scan completed successfully. Found {devicesFound} devices.");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Scan completed successfully. Found {devicesFound} devices.");
+                    Console.WriteLine($"Error in scan completed handler: {ex.Message}");
+                    errorMessage = ex.Message;
+                    scanCompleted = true;
                 }
             };
             
@@ -278,18 +409,25 @@ public class BluetoothTrainerService : IDisposable
             }
             
             // Ensure scan is stopped
-            if (_deviceScanner.IsScanning)
+            if (_deviceScanner?.IsScanning == true)
             {
-                await _deviceScanner.StopScanAsync();
+                try
+                {
+                    await _deviceScanner.StopScanAsync();
+                }
+                catch (Exception stopEx)
+                {
+                    Console.WriteLine($"Warning: Error stopping scan: {stopEx.Message}");
+                }
             }
             
             Console.WriteLine($"Bluetooth scan finished. Found {_discoveredDevices.Count} fitness devices.");
             
-            // If we have an error, log it and throw exception
+            // If we have an error, log it but return empty list instead of throwing
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 Console.WriteLine($"Bluetooth scan completed with error: {errorMessage}");
-                throw new InvalidOperationException($"Bluetooth scan failed: {errorMessage}");
+                return new List<IBleDevice>(); // Return empty list instead of throwing
             }
             
             return new List<IBleDevice>(_discoveredDevices);
@@ -297,7 +435,8 @@ public class BluetoothTrainerService : IDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"Error during Bluetooth scan: {ex.Message}");
-            throw;
+            // Return empty list instead of throwing to be more graceful
+            return new List<IBleDevice>();
         }
     }
     
@@ -313,6 +452,15 @@ public class BluetoothTrainerService : IDisposable
             if (_isConnected)
             {
                 DisconnectAsync().Wait(TimeSpan.FromSeconds(2));
+            }
+            
+            // Dispose the connected device specifically
+            if (_connectedDevice != null)
+            {
+                _connectedDevice.DataReceived -= OnRealDeviceDataReceived;
+                _connectedDevice.ConnectionChanged -= OnDeviceConnectionChanged;
+                _connectedDevice.Dispose();
+                _connectedDevice = null;
             }
             
             // Dispose discovered devices
