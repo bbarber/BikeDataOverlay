@@ -15,9 +15,15 @@
       "WebFetch(domain:www.nuget.org)",
       "Bash(del \"Services\\Bluetooth\\PluginBleDeviceScanner.cs\")",
       "Bash(del \"Services\\Bluetooth\\PluginBleDevice.cs\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }
