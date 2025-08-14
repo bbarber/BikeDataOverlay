@@ -1,11 +1,15 @@
 using System;
+using System.Linq;
 
 namespace BikeDataApi.Services.Bluetooth.Models;
 
 public static class BleServiceDefinitions
 {
-    // Fitness Machine Service (FTMS)
+    // Fitness Equipment Services
     public static readonly Guid FitnessMachineServiceUuid = new("00001826-0000-1000-8000-00805F9B34FB");
+    public static readonly Guid HeartRateServiceUuid = new("0000180D-0000-1000-8000-00805F9B34FB");
+    public static readonly Guid CyclingPowerServiceUuid = new("00001818-0000-1000-8000-00805F9B34FB");
+    public static readonly Guid CyclingSpeedAndCadenceServiceUuid = new("00001816-0000-1000-8000-00805F9B34FB");
     
     // FTMS Characteristics
     public static readonly Guid FitnessMachineFeatureCharacteristicUuid = new("00002ACC-0000-1000-8000-00805F9B34FB");
@@ -13,6 +17,17 @@ public static class BleServiceDefinitions
     public static readonly Guid FitnessMachineStatusCharacteristicUuid = new("00002ADA-0000-1000-8000-00805F9B34FB");
     public static readonly Guid FitnessMachineControlPointCharacteristicUuid = new("00002AD9-0000-1000-8000-00805F9B34FB");
     public static readonly Guid TrainingStatusCharacteristicUuid = new("00002AD3-0000-1000-8000-00805F9B34FB");
+    
+    // Heart Rate Characteristics
+    public static readonly Guid HeartRateMeasurementCharacteristicUuid = new("00002A37-0000-1000-8000-00805F9B34FB");
+    
+    // Cycling Power Characteristics
+    public static readonly Guid CyclingPowerMeasurementCharacteristicUuid = new("00002A63-0000-1000-8000-00805F9B34FB");
+    public static readonly Guid CyclingPowerFeatureCharacteristicUuid = new("00002A65-0000-1000-8000-00805F9B34FB");
+    
+    // Cycling Speed and Cadence Characteristics
+    public static readonly Guid CSCMeasurementCharacteristicUuid = new("00002A5B-0000-1000-8000-00805F9B34FB");
+    public static readonly Guid CSCFeatureCharacteristicUuid = new("00002A5C-0000-1000-8000-00805F9B34FB");
     
     // Device Information Service
     public static readonly Guid DeviceInformationServiceUuid = new("0000180A-0000-1000-8000-00805F9B34FB");
@@ -23,6 +38,37 @@ public static class BleServiceDefinitions
     
     // Common Descriptors
     public static readonly Guid ClientCharacteristicConfigurationDescriptorUuid = new("00002902-0000-1000-8000-00805F9B34FB");
+    
+    // Helper method to check if a device advertises fitness services
+    public static bool IsFitnessDevice(IEnumerable<Guid> advertisedServiceUuids)
+    {
+        var fitnessServices = new[]
+        {
+            FitnessMachineServiceUuid,
+            HeartRateServiceUuid,
+            CyclingPowerServiceUuid,
+            CyclingSpeedAndCadenceServiceUuid
+        };
+        
+        return advertisedServiceUuids.Any(uuid => fitnessServices.Contains(uuid));
+    }
+    
+    // Get device type based on advertised services
+    public static string GetDeviceType(IEnumerable<Guid> advertisedServiceUuids)
+    {
+        var services = advertisedServiceUuids.ToList();
+        
+        if (services.Contains(FitnessMachineServiceUuid))
+            return "Smart Trainer";
+        if (services.Contains(CyclingPowerServiceUuid))
+            return "Power Meter";
+        if (services.Contains(CyclingSpeedAndCadenceServiceUuid))
+            return "Speed/Cadence Sensor";
+        if (services.Contains(HeartRateServiceUuid))
+            return "Heart Rate Monitor";
+        
+        return "Unknown Fitness Device";
+    }
 }
 
 public static class FitnessMachineFeatures

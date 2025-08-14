@@ -94,26 +94,31 @@ public class MetricsController : ControllerBase
     }
     
     [HttpGet("devices/scan")]
-    public async Task<ActionResult<object>> ScanForBluetoothDevices()
+    public async Task<ActionResult<object>> ScanForBluetoothDevices([FromQuery] int timeoutSeconds = 15)
     {
         try
         {
-            var devices = await _bluetoothService.ScanForDevicesAsync();
+            var timeout = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, 5, 60));
+            var devices = await _bluetoothService.ScanForDevicesAsync(timeout);
+            
             return new
             {
                 Success = true,
                 DeviceCount = devices.Count,
+                ScanTimeout = timeout.TotalSeconds,
                 Devices = devices.Select(d => new
                 {
                     Id = d.DeviceId,
                     Name = d.Name,
                     IsConnected = d.IsConnected,
+                    DeviceType = "Fitness Device",
                     DeviceInfo = d.DeviceInfo != null ? new
                     {
                         d.DeviceInfo.ManufacturerName,
                         d.DeviceInfo.ModelNumber,
                         d.DeviceInfo.SerialNumber,
-                        d.DeviceInfo.FirmwareRevision
+                        d.DeviceInfo.FirmwareRevision,
+                        MachineType = d.DeviceInfo.MachineType.ToString()
                     } : null
                 }).ToArray(),
                 Message = $"Found {devices.Count} Bluetooth fitness devices"
@@ -125,8 +130,61 @@ public class MetricsController : ControllerBase
             {
                 Success = false,
                 DeviceCount = 0,
+                ScanTimeout = timeoutSeconds,
                 Devices = Array.Empty<object>(),
                 Message = $"Scan error: {ex.Message}"
+            });
+        }
+    }
+    
+    [HttpGet("devices/list")]
+    public async Task<ActionResult<object>> ListAvailableDevices()
+    {
+        try
+        {
+            var devices = await _bluetoothService.ScanForDevicesAsync(TimeSpan.FromSeconds(10));
+            
+            var deviceList = devices.Select(d => new
+            {
+                Id = d.DeviceId,
+                Name = d.Name,
+                Type = "Fitness Device",
+                IsConnected = d.IsConnected,
+                CanConnect = !d.IsConnected,
+                Status = d.IsConnected ? "Connected" : "Available",
+                LastSeen = DateTime.UtcNow,
+                DeviceInfo = d.DeviceInfo != null ? new
+                {
+                    Manufacturer = d.DeviceInfo.ManufacturerName ?? "Unknown",
+                    Model = d.DeviceInfo.ModelNumber ?? "Unknown",
+                    Type = d.DeviceInfo.MachineType.ToString()
+                } : new
+                {
+                    Manufacturer = "Unknown",
+                    Model = "Unknown", 
+                    Type = "Unknown"
+                }
+            }).ToArray();
+            
+            return new
+            {
+                Success = true,
+                DeviceCount = deviceList.Length,
+                Devices = deviceList,
+                ScanTimestamp = DateTime.UtcNow,
+                Message = deviceList.Length > 0 
+                    ? $"Found {deviceList.Length} fitness devices" 
+                    : "No fitness devices found. Make sure your devices are turned on and in pairing mode."
+            };
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                Success = false,
+                DeviceCount = 0,
+                Devices = Array.Empty<object>(),
+                Message = $"Device listing error: {ex.Message}"
             });
         }
     }

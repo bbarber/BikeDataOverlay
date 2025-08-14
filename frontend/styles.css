@@ -7,6 +7,7 @@ body {
 }
 
 .overlay-container {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -38,4 +39,207 @@ body {
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);
     letter-spacing: 1px;
+}
+
+/* Device Panel Styles */
+.device-panel {
+    position: absolute;
+    top: 0;
+    left: 260px;
+    width: 300px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: none;
+    z-index: 1000;
+}
+
+.device-panel.visible {
+    display: block;
+}
+
+.device-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.device-panel-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.device-panel-content {
+    padding: 16px;
+}
+
+.device-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #00ff88;
+    color: black;
+}
+
+.btn-primary:hover {
+    background: #00e077;
+}
+
+.btn-primary:disabled {
+    background: rgba(0, 255, 136, 0.3);
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.device-status {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid #00ff88;
+}
+
+.status-text {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+}
+
+.device-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.no-devices {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    padding: 20px;
+    font-style: italic;
+}
+
+.device-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.device-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.device-name {
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.device-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.device-type {
+    color: #00ff88;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.device-status-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.device-status-badge.available {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.device-status-badge.connected {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+}
+
+.device-details {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.device-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-connect {
+    background: rgba(0, 255, 136, 0.8);
+    color: black;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-connect:hover {
+    background: #00ff88;
+}
+
+.btn-connect:disabled {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
 }

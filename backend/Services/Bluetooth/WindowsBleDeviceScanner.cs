@@ -133,21 +133,29 @@ public class WindowsBleDeviceScanner : IBleDeviceScanner
 
             Console.WriteLine($"Discovered BLE device: {deviceName} (Address: {args.BluetoothAddress:X12}, RSSI: {args.RawSignalStrengthInDBm} dBm)");
 
-            // Accept all devices for now to test basic functionality
-            // Later we can add filtering for fitness devices
+            // Log service UUIDs if available for debugging
+            if (args.Advertisement.ServiceUuids.Any())
+            {
+                Console.WriteLine($"  Advertised Services: {string.Join(", ", args.Advertisement.ServiceUuids)}");
+            }
+
+            // Filter for fitness devices only
+            if (!args.Advertisement.ServiceUuids.Any() || !BleServiceDefinitions.IsFitnessDevice(args.Advertisement.ServiceUuids))
+            {
+                Console.WriteLine($"  Skipping non-fitness device: {deviceName}");
+                return;
+            }
+
+            var deviceType = BleServiceDefinitions.GetDeviceType(args.Advertisement.ServiceUuids);
+            Console.WriteLine($"  Found fitness device: {deviceType}");
+
             var bleDevice = new WindowsBleDevice(args.BluetoothAddress, deviceName);
             _discoveredDevices[args.BluetoothAddress] = bleDevice;
 
             // Notify listeners
             DeviceDiscovered?.Invoke(this, new BleDeviceDiscoveredEventArgs(bleDevice, args.RawSignalStrengthInDBm));
             
-            Console.WriteLine($"Added device to discovered list: {deviceName}");
-            
-            // Log service UUIDs if available for debugging
-            if (args.Advertisement.ServiceUuids.Any())
-            {
-                Console.WriteLine($"  Services: {string.Join(", ", args.Advertisement.ServiceUuids)}");
-            }
+            Console.WriteLine($"Added fitness device to discovered list: {deviceName} ({deviceType})");
         }
         catch (Exception ex)
         {
