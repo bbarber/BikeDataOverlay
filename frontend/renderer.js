@@ -184,6 +184,30 @@ function formatTime(milliseconds) {
 function updateTimerDisplay() {
     const totalTime = timerElapsedTime + (isTimerRunning ? Date.now() - timerStartTime : 0);
     document.getElementById('totalTime').textContent = formatTime(totalTime);
+    updateTimerButtonVisibility();
+}
+
+function updateTimerButtonVisibility() {
+    const startBtn = document.getElementById('startTimer');
+    const stopBtn = document.getElementById('stopTimer');
+    const resetBtn = document.getElementById('resetTimer');
+    
+    if (isTimerRunning) {
+        // Timer is running: show Pause + Reset
+        startBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+        resetBtn.classList.remove('hidden');
+    } else if (timerElapsedTime > 0) {
+        // Timer is paused (has elapsed time): show Play + Reset
+        startBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+        resetBtn.classList.remove('hidden');
+    } else {
+        // Timer is stopped/reset (00:00): show Play + Reset
+        startBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+        resetBtn.classList.remove('hidden');
+    }
 }
 
 function startTimer() {

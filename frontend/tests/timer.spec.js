@@ -45,16 +45,16 @@ test.describe('Timer Functionality Tests', () => {
     await expect(timerControls).toHaveCSS('visibility', 'hidden');
   });
 
-  test('timer controls should appear on hover', async () => {
+  test('timer controls should appear on hover with correct visibility', async () => {
     // First ensure timer container is visible
     await expect(window.locator('.time-container')).toBeVisible();
     
     // Hover over the timer container
     await window.locator('.time-container').hover();
     
-    // Wait for hover effect and check buttons are visible
+    // Wait for hover effect and check correct buttons are visible (timer stopped: show Play + Reset)
     await expect(window.locator('#startTimer')).toBeVisible();
-    await expect(window.locator('#stopTimer')).toBeVisible();
+    await expect(window.locator('#stopTimer')).toBeHidden();
     await expect(window.locator('#resetTimer')).toBeVisible();
   });
 
@@ -65,15 +65,18 @@ test.describe('Timer Functionality Tests', () => {
     // Hover to make buttons visible
     await window.locator('.time-container').hover();
     
-    // Wait for buttons to be visible before checking icons
+    // Wait for correct buttons to be visible (timer stopped: show Play + Reset)
     await expect(window.locator('#startTimer')).toBeVisible();
-    await expect(window.locator('#stopTimer')).toBeVisible();
     await expect(window.locator('#resetTimer')).toBeVisible();
     
     // Check button icons using data-lucide attributes
     await expect(window.locator('#startTimer [data-lucide="play"]')).toBeVisible();
-    await expect(window.locator('#stopTimer [data-lucide="pause"]')).toBeVisible();
     await expect(window.locator('#resetTimer [data-lucide="rotate-ccw"]')).toBeVisible();
+    
+    // Start the timer to check pause button icon
+    await window.locator('#startTimer').click();
+    await expect(window.locator('#stopTimer')).toBeVisible();
+    await expect(window.locator('#stopTimer [data-lucide="pause"]')).toBeVisible();
   });
 
   test('start button should start the timer', async () => {
@@ -160,16 +163,21 @@ test.describe('Timer Functionality Tests', () => {
     expect(parseTime(newTime)).toBeGreaterThan(parseTime(stoppedTime));
   });
 
-  test('multiple start button clicks should not cause issues', async () => {
-    // Hover and click start multiple times
+  test('button visibility changes correctly during timer state changes', async () => {
+    // Hover and verify initial state (timer stopped: show Play + Reset)
     await expect(window.locator('.time-container')).toBeVisible();
     await window.locator('.time-container').hover();
     await expect(window.locator('#startTimer')).toBeVisible();
-    await window.locator('#startTimer').click();
-    await window.locator('#startTimer').click();
-    await window.locator('#startTimer').click();
+    await expect(window.locator('#stopTimer')).toBeHidden();
+    await expect(window.locator('#resetTimer')).toBeVisible();
     
-    // Wait and verify timer is still working
+    // Start timer and verify running state (show Pause + Reset)
+    await window.locator('#startTimer').click();
+    await expect(window.locator('#startTimer')).toBeHidden();
+    await expect(window.locator('#stopTimer')).toBeVisible();
+    await expect(window.locator('#resetTimer')).toBeVisible();
+    
+    // Wait and verify timer is working
     await window.waitForTimeout(1500);
     const timeText = await window.locator('#totalTime').textContent();
     expect(timeText).toMatch(/00:0[1-9]|00:[1-9][0-9]/);
