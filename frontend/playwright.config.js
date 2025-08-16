@@ -13,9 +13,17 @@ module.exports = defineConfig({
   },
   projects: [
     {
-      name: 'electron',
+      name: 'e2e-tests',
+      testDir: './tests/e2e',
       use: {
-        // Playwright will launch Electron with this configuration
+        // End-to-end application tests
+      },
+    },
+    {
+      name: 'feature-tests', 
+      testDir: './tests/features',
+      use: {
+        // Feature-specific functionality tests
       },
     },
   ],
