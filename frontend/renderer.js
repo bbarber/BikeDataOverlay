@@ -5,6 +5,12 @@ let updateInterval;
 let devicePanelVisible = false;
 let isScanning = false;
 
+// Timer variables
+let timerInterval;
+let timerStartTime = null;
+let timerElapsedTime = 0;
+let isTimerRunning = false;
+
 async function fetchMetrics() {
     try {
         const response = await axios.get(`${API_BASE_URL}/metrics/current`);
@@ -160,6 +166,51 @@ async function connectToDevice(deviceId) {
     }
 }
 
+// Timer functions
+function formatTime(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+    const totalTime = timerElapsedTime + (isTimerRunning ? Date.now() - timerStartTime : 0);
+    document.getElementById('totalTime').textContent = formatTime(totalTime);
+}
+
+function startTimer() {
+    if (!isTimerRunning) {
+        isTimerRunning = true;
+        timerStartTime = Date.now();
+        timerInterval = setInterval(updateTimerDisplay, 100);
+        console.log('Timer started');
+    }
+}
+
+function stopTimer() {
+    if (isTimerRunning) {
+        isTimerRunning = false;
+        timerElapsedTime += Date.now() - timerStartTime;
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        updateTimerDisplay();
+        console.log('Timer stopped');
+    }
+}
+
+function resetTimer() {
+    isTimerRunning = false;
+    timerElapsedTime = 0;
+    timerStartTime = null;
+    if (timerInterval) {
+        clearInterval(timerInterval);
+    }
+    updateTimerDisplay();
+    console.log('Timer reset');
+}
+
 function toggleDevicePanel() {
     const devicePanel = document.getElementById('devicePanel');
     devicePanelVisible = !devicePanelVisible;
@@ -212,8 +263,26 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Enable mouse events when hovering over the timer container
+    const timerContainer = document.querySelector('.time-container');
+    timerContainer.addEventListener('mouseenter', () => {
+        if (typeof require !== 'undefined') {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('set-ignore-mouse-events', false);
+            console.log('Timer container mouseenter - enabling mouse events');
+        }
+    });
+    
     document.getElementById('scanDevicesBtn').addEventListener('click', scanForDevices);
     document.getElementById('refreshDevicesBtn').addEventListener('click', loadDeviceList);
+    
+    // Timer button event listeners
+    document.getElementById('startTimer').addEventListener('click', startTimer);
+    document.getElementById('stopTimer').addEventListener('click', stopTimer);
+    document.getElementById('resetTimer').addEventListener('click', resetTimer);
+    
+    // Initialize timer display
+    updateTimerDisplay();
     
     setTimeout(startMetricsUpdates, 2000);
 });

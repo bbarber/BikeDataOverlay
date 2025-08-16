@@ -112,6 +112,45 @@ body {
     left: 0;
 }
 
+.timer-controls {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+}
+
+.time-container:hover .timer-controls {
+    opacity: 1;
+    visibility: visible;
+}
+
+.timer-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.timer-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.timer-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+}
+
 .toggle-btn:hover,
 .toggle-btn:focus {
     background: rgba(255, 255, 255, 0.2);
