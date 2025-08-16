@@ -15,27 +15,6 @@
         
         <!-- Toggle button for device panel - always visible -->
         <button id="toggleDevicePanel" class="toggle-btn">⚙️</button>
-    </div>
-    
-    <div class="overlay-container heart-rate-container">
-        <div class="metric-display">
-            <div class="metric-value" id="heartRate">--</div>
-            <div class="metric-label">BPM</div>
-        </div>
-    </div>
-    
-    <div class="overlay-container time-container">
-        <div class="metric-display">
-            <div class="metric-value" id="totalTime">00:00</div>
-            <div class="metric-label">TIME</div>
-        </div>
-        
-        <!-- Timer control buttons -->
-        <div class="timer-controls">
-            <button id="startTimer" class="timer-btn start-btn">▶️</button>
-            <button id="stopTimer" class="timer-btn stop-btn">⏸️</button>
-            <button id="resetTimer" class="timer-btn reset-btn">🔄</button>
-        </div>
         
         <!-- Device Management Panel -->
         <div class="device-panel" id="devicePanel">
@@ -57,6 +36,27 @@
                     <div class="no-devices">No devices found. Click "Scan for Devices" to search for fitness equipment.</div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <div class="overlay-container heart-rate-container">
+        <div class="metric-display">
+            <div class="metric-value" id="heartRate">--</div>
+            <div class="metric-label">BPM</div>
+        </div>
+    </div>
+    
+    <div class="overlay-container time-container">
+        <div class="metric-display">
+            <div class="metric-value" id="totalTime">00:00</div>
+            <div class="metric-label">TIME</div>
+        </div>
+        
+        <!-- Timer control buttons -->
+        <div class="timer-controls">
+            <button id="startTimer" class="timer-btn start-btn">▶️</button>
+            <button id="stopTimer" class="timer-btn stop-btn">⏸️</button>
+            <button id="resetTimer" class="timer-btn reset-btn">🔄</button>
         </div>
     </div>
     <script src="renderer.js"></script>
