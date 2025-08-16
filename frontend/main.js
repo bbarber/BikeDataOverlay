@@ -7,7 +7,7 @@ let overlayWindow;
 function createOverlayWindow() {
     overlayWindow = new BrowserWindow({
         width: 600, // Increased to accommodate device panel
-        height: 300, // Increased to accommodate device panel
+        height: 380, // Increased to accommodate all three metric containers
         x: 50,
         y: 50,
         frame: false,
@@ -32,9 +32,10 @@ function createOverlayWindow() {
             
             // Track when mouse is over interactive elements
             document.addEventListener('mouseover', (e) => {
-                const isInteractive = e.target.matches('button, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect') ||
+                const isInteractive = e.target.matches('button, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect, .timer-btn') ||
                                     e.target.closest('button') ||
                                     e.target.closest('.device-panel') ||
+                                    e.target.closest('.timer-controls') ||
                                     e.target.id === 'toggleDevicePanel';
                                     
                 if (isInteractive) {
@@ -49,9 +50,10 @@ function createOverlayWindow() {
             // Track when mouse leaves interactive elements
             document.addEventListener('mouseout', (e) => {
                 const isLeavingInteractive = !e.relatedTarget || 
-                    (!e.relatedTarget.matches('button, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect') &&
+                    (!e.relatedTarget.matches('button, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect, .timer-btn') &&
                      !e.relatedTarget.closest('button') &&
                      !e.relatedTarget.closest('.device-panel') &&
+                     !e.relatedTarget.closest('.timer-controls') &&
                      e.relatedTarget.id !== 'toggleDevicePanel');
                      
                 if (isLeavingInteractive) {
