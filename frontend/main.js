@@ -6,10 +6,10 @@ let overlayWindow;
 
 function createOverlayWindow() {
     overlayWindow = new BrowserWindow({
-        width: 600, // Increased to accommodate device panel
-        height: 380, // Increased to accommodate all three metric containers
         x: 50,
         y: 50,
+        width: 800,
+        height: 800,
         frame: false,
         alwaysOnTop: true,
         transparent: true,
