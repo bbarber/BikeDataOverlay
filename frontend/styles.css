@@ -100,6 +100,12 @@ body {
     visibility: visible;
 }
 
+.heart-rate-container {
+    position: absolute;
+    top: 120px;
+    left: 0;
+}
+
 .toggle-btn:hover,
 .toggle-btn:focus {
     background: rgba(255, 255, 255, 0.2);
