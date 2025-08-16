@@ -1,5 +1,12 @@
 const axios = require('axios');
 
+// Initialize Lucide icons when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+});
+
 const API_BASE_URL = 'http://localhost:5000/api';
 let updateInterval;
 let devicePanelVisible = false;

@@ -65,15 +65,15 @@ test.describe('Timer Functionality Tests', () => {
     // Hover to make buttons visible
     await window.locator('.time-container').hover();
     
-    // Wait for buttons to be visible before checking text
+    // Wait for buttons to be visible before checking icons
     await expect(window.locator('#startTimer')).toBeVisible();
     await expect(window.locator('#stopTimer')).toBeVisible();
     await expect(window.locator('#resetTimer')).toBeVisible();
     
-    // Check button text/icons
-    await expect(window.locator('#startTimer')).toHaveText('▶️');
-    await expect(window.locator('#stopTimer')).toHaveText('⏸️');
-    await expect(window.locator('#resetTimer')).toHaveText('🔄');
+    // Check button icons using data-lucide attributes
+    await expect(window.locator('#startTimer [data-lucide="play"]')).toBeVisible();
+    await expect(window.locator('#stopTimer [data-lucide="pause"]')).toBeVisible();
+    await expect(window.locator('#resetTimer [data-lucide="rotate-ccw"]')).toBeVisible();
   });
 
   test('start button should start the timer', async () => {

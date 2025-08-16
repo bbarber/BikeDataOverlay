@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bike Data Overlay</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="node_modules/lucide/dist/umd/lucide.js"></script>
 </head>
 <body>
     <div class="overlay-container">
@@ -14,7 +15,9 @@
         </div>
         
         <!-- Toggle button for device panel - always visible -->
-        <button id="toggleDevicePanel" class="toggle-btn">⚙️</button>
+        <button id="toggleDevicePanel" class="toggle-btn">
+            <i data-lucide="settings"></i>
+        </button>
         
         <!-- Device Management Panel -->
         <div class="device-panel" id="devicePanel">
@@ -54,9 +57,15 @@
         
         <!-- Timer control buttons -->
         <div class="timer-controls">
-            <button id="startTimer" class="timer-btn start-btn">▶️</button>
-            <button id="stopTimer" class="timer-btn stop-btn">⏸️</button>
-            <button id="resetTimer" class="timer-btn reset-btn">🔄</button>
+            <button id="startTimer" class="timer-btn start-btn">
+                <i data-lucide="play"></i>
+            </button>
+            <button id="stopTimer" class="timer-btn stop-btn">
+                <i data-lucide="pause"></i>
+            </button>
+            <button id="resetTimer" class="timer-btn reset-btn">
+                <i data-lucide="rotate-ccw"></i>
+            </button>
         </div>
     </div>
     <script src="renderer.js"></script>

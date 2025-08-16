@@ -41,7 +41,7 @@ test.describe('Bike Data Overlay Electron App', () => {
     await window.locator('.overlay-container').first().hover();
     // Verify the toggle button is visible
     await expect(window.locator('#toggleDevicePanel')).toBeVisible();
-    await expect(window.locator('#toggleDevicePanel')).toHaveText('⚙️');
+    await expect(window.locator('#toggleDevicePanel [data-lucide="settings"]')).toBeVisible();
   });
 
   test('should open and close device panel', async () => {
