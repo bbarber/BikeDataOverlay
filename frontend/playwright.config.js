@@ -2,7 +2,7 @@ const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
-  timeout: 1000,
+  timeout: 30000, // Increased to 30 seconds for Electron app startup
   fullyParallel: false,
   retries: 1,
   workers: 1,

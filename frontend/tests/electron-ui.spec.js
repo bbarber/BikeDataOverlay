@@ -7,9 +7,9 @@ test.describe('Bike Data Overlay Electron App', () => {
   let window;
 
   test.beforeEach(async () => {
-    // Launch Electron app
+    // Launch Electron app without DevTools for testing
     electronApp = await electron.launch({
-      args: [path.join(__dirname, '..', 'main.js'), '--dev'],
+      args: [path.join(__dirname, '..', 'main.js')], // Remove --dev flag for tests
       executablePath: require('electron')
     });
 
@@ -18,7 +18,10 @@ test.describe('Bike Data Overlay Electron App', () => {
     
     // Wait for the window to be ready and for the DOM to load
     await window.waitForLoadState('domcontentloaded');
-    await window.waitForTimeout(1000); // Extra wait for app initialization
+    
+    // Wait for app initialization and make sure core elements are present
+    await window.waitForSelector('.overlay-container', { timeout: 10000 });
+    await window.waitForTimeout(2000); // Extra wait for app initialization
   });
 
   test.afterEach(async () => {
