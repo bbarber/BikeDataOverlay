@@ -18,6 +18,19 @@ let timerStartTime = null;
 let timerElapsedTime = 0;
 let isTimerRunning = false;
 
+// HR Zone variables
+let hrZonePanelVisible = false;
+let hrConfig = {
+    age: 30,
+    restingHR: 60,
+    targetZone: 2
+};
+let hrZones = {};
+
+// Test mode for HR simulation
+let testMode = false;
+let simulatedHR = 85;
+
 async function fetchMetrics() {
     try {
         const response = await axios.get(`${API_BASE_URL}/metrics/current`);
@@ -25,9 +38,23 @@ async function fetchMetrics() {
         
         document.getElementById('watts').textContent = Math.round(metrics.watts);
         
+        // Update heart rate with zone coloring
+        let heartRate = metrics.heartRate || metrics.bpm || 0;
+        
+        // Use simulated data if no real data and test mode is on
+        if (heartRate === 0 && testMode) {
+            heartRate = simulatedHR;
+            // Simulate heart rate changes
+            simulatedHR += (Math.random() - 0.5) * 4;
+            simulatedHR = Math.max(60, Math.min(200, simulatedHR));
+        }
+        
+        updateHeartRateDisplay(heartRate);
+        
     } catch (error) {
         console.error('Failed to fetch metrics:', error);
         document.getElementById('watts').textContent = '--';
+        document.getElementById('heartRate').textContent = '--';
     }
 }
 
@@ -243,6 +270,147 @@ function resetTimer() {
     console.log('Timer reset');
 }
 
+// HR Zone functions
+function calculateHrZones(age, restingHR = 60) {
+    // Calculate max HR using improved formula: 208 - 0.7 * age
+    const maxHR = Math.round(208 - 0.7 * age);
+    
+    // Calculate HR Reserve (Karvonen method)
+    const hrReserve = maxHR - restingHR;
+    
+    // Calculate 5 zones based on % of HR Reserve + resting HR
+    return {
+        zone1: {
+            min: Math.round(restingHR + hrReserve * 0.50),
+            max: Math.round(restingHR + hrReserve * 0.60),
+            name: 'Recovery',
+            desc: 'Active recovery, very light'
+        },
+        zone2: {
+            min: Math.round(restingHR + hrReserve * 0.60),
+            max: Math.round(restingHR + hrReserve * 0.70),
+            name: 'Aerobic',
+            desc: 'Fat burning, endurance'
+        },
+        zone3: {
+            min: Math.round(restingHR + hrReserve * 0.70),
+            max: Math.round(restingHR + hrReserve * 0.80),
+            name: 'Moderate',
+            desc: 'Aerobic fitness'
+        },
+        zone4: {
+            min: Math.round(restingHR + hrReserve * 0.80),
+            max: Math.round(restingHR + hrReserve * 0.90),
+            name: 'Hard',
+            desc: 'Lactate threshold'
+        },
+        zone5: {
+            min: Math.round(restingHR + hrReserve * 0.90),
+            max: maxHR,
+            name: 'Maximal',
+            desc: 'VO2 max, very hard'
+        }
+    };
+}
+
+function loadHrConfig() {
+    const saved = localStorage.getItem('bikeDataHrConfig');
+    if (saved) {
+        hrConfig = { ...hrConfig, ...JSON.parse(saved) };
+    }
+    updateHrZones();
+    updateHrInputs();
+    updateTargetZoneSelection();
+}
+
+function saveHrConfig() {
+    localStorage.setItem('bikeDataHrConfig', JSON.stringify(hrConfig));
+    console.log('HR config saved:', hrConfig);
+}
+
+function updateHrZones() {
+    hrZones = calculateHrZones(hrConfig.age, hrConfig.restingHR);
+    updateHrZoneDisplay();
+}
+
+function updateHrInputs() {
+    document.getElementById('userAge').value = hrConfig.age;
+    document.getElementById('restingHR').value = hrConfig.restingHR;
+}
+
+function updateTargetZoneSelection() {
+    const radio = document.querySelector(`input[name="targetZone"][value="${hrConfig.targetZone}"]`);
+    if (radio) radio.checked = true;
+}
+
+function updateHrZoneDisplay() {
+    for (let i = 1; i <= 5; i++) {
+        const zone = hrZones[`zone${i}`];
+        const rangeElement = document.getElementById(`zone${i}Range`);
+        if (rangeElement && zone) {
+            rangeElement.textContent = `${zone.min}-${zone.max} BPM`;
+        }
+    }
+}
+
+function getHrZone(heartRate) {
+    for (let i = 1; i <= 5; i++) {
+        const zone = hrZones[`zone${i}`];
+        if (heartRate >= zone.min && heartRate <= zone.max) {
+            return { 
+                zone: i, 
+                name: zone.name, 
+                inTarget: i === hrConfig.targetZone 
+            };
+        }
+    }
+    
+    // If HR is below zone 1, still return zone 1
+    if (heartRate < hrZones.zone1.min) {
+        return { zone: 1, name: hrZones.zone1.name, inTarget: hrConfig.targetZone === 1 };
+    }
+    
+    // If HR is above zone 5, still return zone 5
+    return { zone: 5, name: hrZones.zone5.name, inTarget: hrConfig.targetZone === 5 };
+}
+
+function updateHeartRateDisplay(heartRate) {
+    const hrElement = document.getElementById('heartRate');
+    const zoneElement = document.getElementById('hrZoneLabel');
+    
+    if (heartRate > 0) {
+        hrElement.textContent = Math.round(heartRate);
+        
+        const zone = getHrZone(heartRate);
+        zoneElement.textContent = `Zone ${zone.zone} (${zone.name})`;
+        
+        // Apply color based on zone
+        hrElement.classList.remove('hr-in-zone', 'hr-out-of-zone');
+        if (zone.inTarget) {
+            hrElement.classList.add('hr-in-zone');
+        } else {
+            hrElement.classList.add('hr-out-of-zone');
+        }
+    } else {
+        hrElement.textContent = '--';
+        zoneElement.textContent = 'Zone 1';
+        hrElement.classList.remove('hr-in-zone', 'hr-out-of-zone');
+    }
+}
+
+function toggleHrZonePanel() {
+    const hrZonePanel = document.getElementById('hrZonePanel');
+    hrZonePanelVisible = !hrZonePanelVisible;
+    
+    if (hrZonePanelVisible) {
+        hrZonePanel.classList.add('visible');
+        updateHrZoneInputs();
+        updateHrZoneDisplay();
+    } else {
+        hrZonePanel.classList.remove('visible');
+    }
+}
+
 function toggleDevicePanel() {
     const devicePanel = document.getElementById('devicePanel');
     devicePanelVisible = !devicePanelVisible;
@@ -308,13 +476,72 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('scanDevicesBtn').addEventListener('click', scanForDevices);
     document.getElementById('refreshDevicesBtn').addEventListener('click', loadDeviceList);
     
+    // HR Zone panel event listeners
+    const hrZoneToggleBtn = document.getElementById('toggleHrZonePanel');
+    const hrZonePanel = document.getElementById('hrZonePanel');
+    
+    hrZoneToggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleHrZonePanel();
+    });
+    
+    // Enable mouse events for HR zone panel
+    hrZoneToggleBtn.addEventListener('mouseenter', () => {
+        if (typeof require !== 'undefined') {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('set-ignore-mouse-events', false);
+        }
+    });
+    
+    hrZonePanel.addEventListener('mouseenter', () => {
+        if (typeof require !== 'undefined') {
+            const { ipcRenderer } = require('electron');
+            ipcRenderer.send('set-ignore-mouse-events', false);
+        }
+    });
+    
+    // HR Zone configuration buttons
+    document.getElementById('calculateZones').addEventListener('click', () => {
+        hrConfig.age = parseInt(document.getElementById('userAge').value);
+        hrConfig.restingHR = parseInt(document.getElementById('restingHR').value);
+        
+        // Get selected target zone
+        const selectedZone = document.querySelector('input[name="targetZone"]:checked');
+        if (selectedZone) {
+            hrConfig.targetZone = parseInt(selectedZone.value);
+        }
+        
+        updateHrZones();
+        saveHrConfig();
+    });
+    
+    // Add event listeners for zone selection
+    document.querySelectorAll('input[name="targetZone"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            if (radio.checked) {
+                hrConfig.targetZone = parseInt(radio.value);
+                saveHrConfig();
+            }
+        });
+    });
+    
+    document.getElementById('toggleTestMode').addEventListener('click', () => {
+        testMode = !testMode;
+        document.getElementById('toggleTestMode').textContent = `Test Mode: ${testMode ? 'ON' : 'OFF'}`;
+        if (testMode) {
+            simulatedHR = 85; // Reset to baseline
+        }
+    });
+    
     // Timer button event listeners
     document.getElementById('startTimer').addEventListener('click', startTimer);
     document.getElementById('stopTimer').addEventListener('click', stopTimer);
     document.getElementById('resetTimer').addEventListener('click', resetTimer);
     
-    // Initialize timer display
+    // Initialize displays
     updateTimerDisplay();
+    loadHrConfig();
     
     setTimeout(startMetricsUpdates, 2000);
 });
