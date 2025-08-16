@@ -182,8 +182,9 @@ function updateTimerDisplay() {
 function startTimer() {
     if (!isTimerRunning) {
         isTimerRunning = true;
-        timerStartTime = Date.now();
+        timerStartTime = Date.now() - 1000; // Start 1 second back for immediate 00:01 display
         timerInterval = setInterval(updateTimerDisplay, 100);
+        updateTimerDisplay(); // Immediately update display to show 00:01
         console.log('Timer started');
     }
 }
