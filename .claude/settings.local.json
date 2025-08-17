@@ -28,7 +28,8 @@
       "Bash(npm run dev:*)",
       "Bash(dotnet build:*)",
       "Bash(taskkill:*)",
-      "Bash(/bashes)"
+      "Bash(/bashes)",
+      "mcp__playwright__playwright_navigate"
     ],
     "deny": [],
     "ask": [],

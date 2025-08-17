@@ -47,13 +47,19 @@ async function fetchMetrics() {
 }
 
 function startMetricsUpdates() {
+    // Stop any existing polling to prevent multiple intervals
+    stopMetricsUpdates();
+    
     fetchMetrics();
     updateInterval = setInterval(fetchMetrics, 1000);
+    console.log('Started metrics polling');
 }
 
 function stopMetricsUpdates() {
     if (updateInterval) {
         clearInterval(updateInterval);
+        updateInterval = null;
+        console.log('Stopped metrics polling');
     }
 }
 
@@ -179,6 +185,9 @@ async function connectToDevice(deviceId) {
             const deviceCount = data.connectedDevices || 1;
             statusEl.textContent = `Connected! Total devices: ${deviceCount}`;
             loadDeviceList(); // Refresh the device list
+            
+            // Start metrics polling when successfully connected
+            startMetricsUpdates();
         } else {
             statusEl.textContent = `Connection failed: ${data.message || data.Message}`;
         }
@@ -563,8 +572,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // Initialize displays
     updateTimerDisplay();
     loadHrConfig();
-    
-    setTimeout(startMetricsUpdates, 2000);
 });
 
 window.addEventListener('beforeunload', stopMetricsUpdates);
