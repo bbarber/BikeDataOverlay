@@ -19,6 +19,13 @@ A cross-platform cycling data overlay application built with .NET MAUI, supporti
   - 5-zone heart rate system
   - Visual feedback for target zone compliance
 
+- **Frameless Window Design**:
+  - Borderless overlay window (like Electron apps)
+  - Always-on-top positioning
+  - Draggable custom title bar
+  - Minimize/restore functionality
+  - Perfect for cycling app overlays
+
 - **Cross-Platform Support**:
   - macOS (via Mac Catalyst)
   - Windows 10/11

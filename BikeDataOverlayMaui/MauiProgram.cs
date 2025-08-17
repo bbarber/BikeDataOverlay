@@ -23,6 +23,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IBluetoothService, BluetoothService>();
 		builder.Services.AddSingleton<IHeartRateZoneService, HeartRateZoneService>();
 		builder.Services.AddSingleton<ITimerService, TimerService>();
+		builder.Services.AddSingleton<IWindowService, WindowService>();
 
 		// Register ViewModels
 		builder.Services.AddTransient<MainViewModel>();

@@ -4,7 +4,7 @@
              xmlns:converters="clr-namespace:BikeDataOverlayMaui.Converters"
              x:Class="BikeDataOverlayMaui.MainPage"
              Title="Bike Data Overlay"
-             BackgroundColor="Black">
+             BackgroundColor="Transparent">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -21,13 +21,75 @@
     <Grid>
         <!-- Main overlay containers -->
         <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         
-        <!-- Power Display -->
+        <!-- Drag Handle for frameless window -->
         <Border Grid.Row="0" 
+                BackgroundColor="#2a2a2a" 
+                Stroke="#444" 
+                StrokeThickness="1"
+                Margin="5,5,5,0">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="5,5,0,0"/>
+            </Border.StrokeShape>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Drag area -->
+                <Label Grid.Column="0" 
+                       Text="🚴‍♂️ Bike Data Overlay" 
+                       FontSize="12" 
+                       TextColor="White" 
+                       VerticalOptions="Center"
+                       Margin="10,0,0,0"/>
+                
+                <!-- Resize grip indicator -->
+                <Label Grid.Column="1" 
+                       Text="⋮⋮" 
+                       FontSize="10" 
+                       TextColor="#666" 
+                       VerticalOptions="Center"
+                       Margin="5,0"/>
+                       
+                <!-- Minimize button -->
+                <Button Grid.Column="2"
+                        Text="−"
+                        FontSize="12"
+                        BackgroundColor="Transparent"
+                        TextColor="#888"
+                        WidthRequest="25"
+                        HeightRequest="25"
+                        Clicked="OnMinimizeClicked"
+                        Margin="0,0,2,0"/>
+                       
+                <!-- Close button -->
+                <Button Grid.Column="3"
+                        Text="✕"
+                        FontSize="12"
+                        BackgroundColor="Transparent"
+                        TextColor="#888"
+                        WidthRequest="25"
+                        HeightRequest="25"
+                        Clicked="OnCloseClicked"
+                        Margin="0,0,5,0"/>
+            </Grid>
+            <Border.GestureRecognizers>
+                <PanGestureRecognizer PanUpdated="OnDragHandlePanUpdated"/>
+                <TapGestureRecognizer NumberOfTapsRequired="2" Tapped="OnDragHandleDoubleTapped"/>
+            </Border.GestureRecognizers>
+        </Border>
+        
+        <!-- Power Display -->
+        <Border Grid.Row="1" 
                 BackgroundColor="#1a1a1a" 
                 Stroke="#333" 
                 StrokeThickness="2"
@@ -149,7 +211,7 @@
         </Border>
         
         <!-- Heart Rate Display -->
-        <Border Grid.Row="1" 
+        <Border Grid.Row="2" 
                 BackgroundColor="#1a1a1a" 
                 Stroke="#333" 
                 StrokeThickness="2"
@@ -296,7 +358,7 @@
         </Border>
         
         <!-- Timer Display -->
-        <Border Grid.Row="2" 
+        <Border Grid.Row="3" 
                 BackgroundColor="#1a1a1a" 
                 Stroke="#333" 
                 StrokeThickness="2"
