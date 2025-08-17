@@ -26,6 +26,9 @@ dotnet run --project backend/BikeDataApi.csproj
 cd frontend && npm run dev
 cd frontend && npm run test
 
+# Individual Playwright Tests
+npx playwright test tests/filename.spec.js -g "test name" --reporter=line
+
 # API Testing
 curl http://localhost:5000/api/[endpoint]
 ```
