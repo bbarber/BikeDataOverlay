@@ -6,7 +6,7 @@ module.exports = defineConfig({
   fullyParallel: false,
   retries: 0,
   workers: 1,
-  reporter: [['html', { outputFolder: 'test-results' }], ['list']],
+  reporter: [['list']],
   use: {
     actionTimeout: 1000,
     navigationTimeout: 1000,
