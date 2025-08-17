@@ -15,8 +15,10 @@ public class WindowsBleDevice : IBleDevice
     private readonly ulong _bluetoothAddress;
     private BluetoothLEDevice? _device;
     private GattDeviceService? _fitnessMachineService;
+    private GattDeviceService? _heartRateService;
     private GattDeviceService? _deviceInfoService;
     private GattCharacteristic? _indoorBikeDataCharacteristic;
+    private GattCharacteristic? _heartRateMeasurementCharacteristic;
     private bool _isConnected;
     private bool _notificationsStarted;
 
@@ -62,7 +64,7 @@ public class WindowsBleDevice : IBleDevice
 
             Console.WriteLine($"Found {gattResult.Services.Count} GATT services");
 
-            // Look for fitness machine service
+            // Look for fitness machine service and heart rate service
             foreach (var service in gattResult.Services)
             {
                 Console.WriteLine($"Service UUID: {service.Uuid}");
@@ -71,6 +73,11 @@ public class WindowsBleDevice : IBleDevice
                 {
                     _fitnessMachineService = service;
                     Console.WriteLine("Found Fitness Machine Service");
+                }
+                else if (service.Uuid == BleServiceDefinitions.HeartRateServiceUuid)
+                {
+                    _heartRateService = service;
+                    Console.WriteLine("Found Heart Rate Service");
                 }
                 else if (service.Uuid == BleServiceDefinitions.DeviceInformationServiceUuid)
                 {
@@ -108,10 +115,12 @@ public class WindowsBleDevice : IBleDevice
             await StopNotificationsAsync();
 
             _fitnessMachineService?.Dispose();
+            _heartRateService?.Dispose();
             _deviceInfoService?.Dispose();
             _device?.Dispose();
 
             _fitnessMachineService = null;
+            _heartRateService = null;
             _deviceInfoService = null;
             _device = null;
             _isConnected = false;
@@ -129,14 +138,43 @@ public class WindowsBleDevice : IBleDevice
     {
         try
         {
-            if (_fitnessMachineService == null)
+            bool success = false;
+
+            // Try to start notifications for fitness machine service
+            if (_fitnessMachineService != null)
             {
-                Console.WriteLine("No fitness machine service available for notifications");
+                success = await StartFitnessMachineNotificationsAsync();
+            }
+
+            // Try to start notifications for heart rate service
+            if (_heartRateService != null)
+            {
+                success = await StartHeartRateNotificationsAsync() || success;
+            }
+
+            if (!success)
+            {
+                Console.WriteLine("No supported services available for notifications");
                 return false;
             }
 
+            _notificationsStarted = true;
+            Console.WriteLine("Successfully started notifications");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to start notifications: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> StartFitnessMachineNotificationsAsync()
+    {
+        try
+        {
             // Get the indoor bike data characteristic
-            var characteristicsResult = await _fitnessMachineService.GetCharacteristicsForUuidAsync(BleServiceDefinitions.IndoorBikeDataCharacteristicUuid);
+            var characteristicsResult = await _fitnessMachineService!.GetCharacteristicsForUuidAsync(BleServiceDefinitions.IndoorBikeDataCharacteristicUuid);
             
             if (characteristicsResult.Status != GattCommunicationStatus.Success || !characteristicsResult.Characteristics.Any())
             {
@@ -154,24 +192,67 @@ public class WindowsBleDevice : IBleDevice
             }
 
             // Subscribe to value changed events
-            _indoorBikeDataCharacteristic.ValueChanged += OnCharacteristicValueChanged;
+            _indoorBikeDataCharacteristic.ValueChanged += OnFitnessMachineDataChanged;
 
             // Write to the client characteristic configuration descriptor to enable notifications
             var status = await _indoorBikeDataCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
             
             if (status != GattCommunicationStatus.Success)
             {
-                Console.WriteLine($"Failed to enable notifications: {status}");
+                Console.WriteLine($"Failed to enable fitness machine notifications: {status}");
                 return false;
             }
 
-            _notificationsStarted = true;
             Console.WriteLine("Successfully started notifications for indoor bike data");
             return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to start notifications: {ex.Message}");
+            Console.WriteLine($"Failed to start fitness machine notifications: {ex.Message}");
+            return false;
+        }
+    }
+
+    private async Task<bool> StartHeartRateNotificationsAsync()
+    {
+        try
+        {
+            // Get the heart rate measurement characteristic
+            var characteristicsResult = await _heartRateService!.GetCharacteristicsForUuidAsync(BleServiceDefinitions.HeartRateMeasurementCharacteristicUuid);
+            
+            if (characteristicsResult.Status != GattCommunicationStatus.Success || !characteristicsResult.Characteristics.Any())
+            {
+                Console.WriteLine("Heart rate measurement characteristic not found");
+                return false;
+            }
+
+            _heartRateMeasurementCharacteristic = characteristicsResult.Characteristics.First();
+
+            // Check if notifications are supported
+            if (!_heartRateMeasurementCharacteristic.CharacteristicProperties.HasFlag(GattCharacteristicProperties.Notify))
+            {
+                Console.WriteLine("Heart rate measurement characteristic doesn't support notifications");
+                return false;
+            }
+
+            // Subscribe to value changed events
+            _heartRateMeasurementCharacteristic.ValueChanged += OnHeartRateDataChanged;
+
+            // Write to the client characteristic configuration descriptor to enable notifications
+            var status = await _heartRateMeasurementCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
+            
+            if (status != GattCommunicationStatus.Success)
+            {
+                Console.WriteLine($"Failed to enable heart rate notifications: {status}");
+                return false;
+            }
+
+            Console.WriteLine("Successfully started notifications for heart rate data");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to start heart rate notifications: {ex.Message}");
             return false;
         }
     }
@@ -182,13 +263,19 @@ public class WindowsBleDevice : IBleDevice
         {
             if (_indoorBikeDataCharacteristic != null && _notificationsStarted)
             {
-                _indoorBikeDataCharacteristic.ValueChanged -= OnCharacteristicValueChanged;
-                
+                _indoorBikeDataCharacteristic.ValueChanged -= OnFitnessMachineDataChanged;
                 await _indoorBikeDataCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
-                
-                _notificationsStarted = false;
                 Console.WriteLine("Stopped notifications for indoor bike data");
             }
+
+            if (_heartRateMeasurementCharacteristic != null && _notificationsStarted)
+            {
+                _heartRateMeasurementCharacteristic.ValueChanged -= OnHeartRateDataChanged;
+                await _heartRateMeasurementCharacteristic.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
+                Console.WriteLine("Stopped notifications for heart rate data");
+            }
+
+            _notificationsStarted = false;
         }
         catch (Exception ex)
         {
@@ -268,7 +355,7 @@ public class WindowsBleDevice : IBleDevice
         }
     }
 
-    private void OnCharacteristicValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+    private void OnFitnessMachineDataChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
     {
         try
         {
@@ -289,7 +376,48 @@ public class WindowsBleDevice : IBleDevice
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing characteristic value: {ex.Message}");
+            Console.WriteLine($"Error parsing fitness machine data: {ex.Message}");
+        }
+    }
+
+    private void OnHeartRateDataChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
+    {
+        try
+        {
+            // Parse heart rate measurement according to Bluetooth Heart Rate Service specification
+            var reader = DataReader.FromBuffer(args.CharacteristicValue);
+            
+            if (args.CharacteristicValue.Length < 2)
+            {
+                Console.WriteLine("Invalid heart rate data length");
+                return;
+            }
+
+            // Read flags byte
+            var flags = reader.ReadByte();
+            
+            // Check if heart rate value format is UINT16 (bit 0 of flags)
+            var heartRateValue = (flags & 0x01) != 0 ? reader.ReadUInt16() : reader.ReadByte();
+
+            Console.WriteLine($"Heart Rate: {heartRateValue} BPM");
+
+            // Create trainer data with heart rate information
+            var trainerData = new TrainerData
+            {
+                HeartRate = heartRateValue,
+                Timestamp = DateTime.UtcNow,
+                IsDataValid = true,
+                // Set other values to 0 since this is a heart rate only device
+                Power = 0,
+                Cadence = 0,
+                Speed = 0
+            };
+            
+            DataReceived?.Invoke(this, new TrainerDataEventArgs(trainerData));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing heart rate data: {ex.Message}");
         }
     }
 
@@ -303,6 +431,7 @@ public class WindowsBleDevice : IBleDevice
             }
 
             _fitnessMachineService?.Dispose();
+            _heartRateService?.Dispose();
             _deviceInfoService?.Dispose();
             _device?.Dispose();
 
