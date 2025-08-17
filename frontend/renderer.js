@@ -240,7 +240,12 @@ function startTimer() {
         isTimerRunning = true;
         timerStartTime = Date.now() - 1000; // Start 1 second back for immediate 00:01 display
         timerInterval = setInterval(updateTimerDisplay, 100);
-        updateTimerDisplay(); // Immediately update display to show 00:01
+        
+        // Force immediate update to show at least 00:01
+        const totalTime = timerElapsedTime + (Date.now() - timerStartTime);
+        document.getElementById('totalTime').textContent = formatTime(totalTime);
+        updateTimerButtonVisibility();
+        
         console.log('Timer started');
     }
 }
@@ -564,10 +569,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     
     
-    // Timer button event listeners
-    document.getElementById('startTimer').addEventListener('click', startTimer);
-    document.getElementById('stopTimer').addEventListener('click', stopTimer);
-    document.getElementById('resetTimer').addEventListener('click', resetTimer);
+    // Timer button event listeners (now handled by inline onclick attributes)
     
     // Initialize displays
     updateTimerDisplay();

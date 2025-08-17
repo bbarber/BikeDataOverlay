@@ -42,7 +42,7 @@ test.describe('Timer Functionality Tests', () => {
     // Timer controls should not be visible initially (without hover)
     const timerControls = window.locator('.timer-controls');
     await expect(timerControls).toHaveCSS('opacity', '0');
-    await expect(timerControls).toHaveCSS('visibility', 'hidden');
+    await expect(timerControls).toHaveCSS('pointer-events', 'none');
   });
 
   test('timer controls should appear on hover with correct visibility', async () => {

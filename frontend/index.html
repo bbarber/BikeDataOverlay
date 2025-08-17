@@ -129,13 +129,13 @@
         
         <!-- Timer control buttons -->
         <div class="timer-controls">
-            <button id="startTimer" class="timer-btn start-btn">
+            <button id="startTimer" class="timer-btn start-btn" onclick="startTimer()">
                 <i data-lucide="play"></i>
             </button>
-            <button id="stopTimer" class="timer-btn stop-btn">
+            <button id="stopTimer" class="timer-btn stop-btn hidden" onclick="stopTimer()">
                 <i data-lucide="pause"></i>
             </button>
-            <button id="resetTimer" class="timer-btn reset-btn">
+            <button id="resetTimer" class="timer-btn reset-btn" onclick="resetTimer()">
                 <i data-lucide="rotate-ccw"></i>
             </button>
         </div>

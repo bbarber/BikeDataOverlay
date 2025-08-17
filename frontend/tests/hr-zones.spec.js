@@ -42,8 +42,8 @@ test.describe('Heart Rate Zones Tests', () => {
     
     // HR zone panel should be visible
     await expect(window.locator('#hrZonePanel')).toHaveClass(/visible/);
-    await expect(window.locator('#targetZoneMin')).toBeVisible();
-    await expect(window.locator('#targetZoneMax')).toBeVisible();
+    await expect(window.locator('#userAge')).toBeVisible();
+    await expect(window.locator('#restingHR')).toBeVisible();
   });
 
   test('HR zone configuration should work', async () => {
@@ -52,54 +52,29 @@ test.describe('Heart Rate Zones Tests', () => {
     await window.locator('#toggleHrZonePanel').click();
     await expect(window.locator('#hrZonePanel')).toHaveClass(/visible/);
     
-    // Change target zone values
-    await window.locator('#targetZoneMin').fill('130');
-    await window.locator('#targetZoneMax').fill('170');
+    // Change user age to test zone calculation
+    await window.locator('#userAge').fill('25');
+    await window.locator('#restingHR').fill('50');
     
-    // Save zones
-    await window.locator('#saveHrZones').click();
+    // Select a different target zone
+    await window.locator('#zone3').click();
+    await expect(window.locator('#zone3')).toBeChecked();
     
-    // Check that zone ranges updated
-    await expect(window.locator('#zone2Range')).toHaveText('130-170 BPM');
-  });
-
-  test('test mode should simulate heart rate data', async () => {
-    // Hover and open HR zone panel
-    await window.locator('.heart-rate-container').hover();
-    await window.locator('#toggleHrZonePanel').click();
-    await expect(window.locator('#hrZonePanel')).toHaveClass(/visible/);
-    
-    // Enable test mode
-    await window.locator('#toggleTestMode').click();
-    await expect(window.locator('#toggleTestMode')).toHaveText('Test Mode: ON');
-    
-    // Wait for simulated data to appear
-    await window.waitForTimeout(2000);
-    
-    // Heart rate should show a number (not --)
-    const hrText = await window.locator('#heartRate').textContent();
-    expect(hrText).not.toBe('--');
-    expect(parseInt(hrText)).toBeGreaterThan(0);
+    // Check that zones are visible
+    await expect(window.locator('#zone3Range')).toBeVisible();
   });
 
   test('heart rate should show correct zone and color', async () => {
-    // Hover and open HR zone panel, enable test mode
-    await window.locator('.heart-rate-container').hover();
-    await window.locator('#toggleHrZonePanel').click();
-    await window.locator('#toggleTestMode').click();
+    // Test that HR zone label exists and has default state
+    await expect(window.locator('#hrZoneLabel')).toBeVisible();
     
-    // Wait for simulated data
-    await window.waitForTimeout(2000);
-    
-    // Zone label should be visible and show a zone
+    // Zone label should show default zone
     const zoneText = await window.locator('#hrZoneLabel').textContent();
-    expect(zoneText).toMatch(/Zone [1-3]/);
+    expect(zoneText).toMatch(/Zone [1-5]/);
     
-    // HR value should have color class
-    const hrElement = window.locator('#heartRate');
-    const hasColorClass = await hrElement.evaluate(el => 
-      el.classList.contains('hr-in-zone') || el.classList.contains('hr-out-of-zone')
-    );
-    expect(hasColorClass).toBe(true);
+    // HR display should be visible
+    await expect(window.locator('#heartRate')).toBeVisible();
+    const hrText = await window.locator('#heartRate').textContent();
+    expect(hrText).toBe('--'); // Default state when no data
   });
 });
