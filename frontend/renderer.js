@@ -27,9 +27,6 @@ let hrConfig = {
 };
 let hrZones = {};
 
-// Test mode for HR simulation
-let testMode = false;
-let simulatedHR = 85;
 
 async function fetchMetrics() {
     try {
@@ -40,15 +37,6 @@ async function fetchMetrics() {
         
         // Update heart rate with zone coloring
         let heartRate = metrics.heartRate || metrics.bpm || 0;
-        
-        // Use simulated data if no real data and test mode is on
-        if (heartRate === 0 && testMode) {
-            heartRate = simulatedHR;
-            // Simulate heart rate changes
-            simulatedHR += (Math.random() - 0.5) * 4;
-            simulatedHR = Math.max(60, Math.min(200, simulatedHR));
-        }
-        
         updateHeartRateDisplay(heartRate);
         
     } catch (error) {
@@ -545,13 +533,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    document.getElementById('toggleTestMode').addEventListener('click', () => {
-        testMode = !testMode;
-        document.getElementById('toggleTestMode').textContent = `Test Mode: ${testMode ? 'ON' : 'OFF'}`;
-        if (testMode) {
-            simulatedHR = 85; // Reset to baseline
-        }
-    });
     
     // Timer button event listeners
     document.getElementById('startTimer').addEventListener('click', startTimer);
