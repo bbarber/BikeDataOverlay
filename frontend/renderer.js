@@ -386,13 +386,29 @@ function updateHeartRateDisplay(heartRate) {
     }
 }
 
+function closeHrZonePanel() {
+    const hrZonePanel = document.getElementById('hrZonePanel');
+    hrZonePanelVisible = false;
+    hrZonePanel.classList.remove('visible');
+}
+
+function closeDevicePanel() {
+    const devicePanel = document.getElementById('devicePanel');
+    devicePanelVisible = false;
+    devicePanel.classList.remove('visible');
+}
+
 function toggleHrZonePanel() {
     const hrZonePanel = document.getElementById('hrZonePanel');
     hrZonePanelVisible = !hrZonePanelVisible;
     
     if (hrZonePanelVisible) {
+        // Close device panel if it's open
+        if (devicePanelVisible) {
+            closeDevicePanel();
+        }
         hrZonePanel.classList.add('visible');
-        updateHrZoneInputs();
+        updateHrInputs();
         updateHrZoneDisplay();
     } else {
         hrZonePanel.classList.remove('visible');
@@ -406,6 +422,10 @@ function toggleDevicePanel() {
     console.log('Toggling device panel, visible:', devicePanelVisible);
     
     if (devicePanelVisible) {
+        // Close HR zone panel if it's open
+        if (hrZonePanelVisible) {
+            closeHrZonePanel();
+        }
         devicePanel.classList.add('visible');
         console.log('Device panel should now be visible');
         console.log('Panel classes:', devicePanel.className);
