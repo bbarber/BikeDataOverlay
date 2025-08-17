@@ -1,0 +1,9 @@
+﻿namespace BikeDataOverlayMaui;
+
+public partial class AppShell : Shell
+{
+	public AppShell()
+	{
+		InitializeComponent();
+	}
+}

@@ -1,33 +1,153 @@
-# Dependencies
-frontend/node_modules/
-backend/bin/
-backend/obj/
+# .NET Build outputs
+**/bin/
+**/obj/
+**/out/
 
-# Build outputs
+# MAUI specific
+**/Platforms/**/bin/
+**/Platforms/**/obj/
+**/Resources/Raw/**
+
+# Build artifacts
 *.exe
 *.dll
 *.pdb
 *.runtimeconfig.json
 *.deps.json
+*.nupkg
+*.snupkg
 
-# IDE
+# MAUI Android
+**/android/bin/
+**/android/obj/
+**/Android/bin/
+**/Android/obj/
+
+# MAUI iOS
+**/ios/bin/
+**/ios/obj/
+**/iOS/bin/
+**/iOS/obj/
+
+# MAUI Mac Catalyst
+**/maccatalyst/bin/
+**/maccatalyst/obj/
+**/MacCatalyst/bin/
+**/MacCatalyst/obj/
+
+# MAUI Windows
+**/windows/bin/
+**/windows/obj/
+**/Windows/bin/
+**/Windows/obj/
+
+# Visual Studio / VS Code
+.vs/
 .vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.cache
+project.lock.json
 .idea/
 *.swp
 *.swo
 
-# OS
+# Xamarin
+*.ipa
+*.apk
+*.aab
+
+# macOS
 .DS_Store
+*.dSYM/
+
+# Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Logs
 *.log
+*.binlog
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Test results
+TestResults/
 test-results/
 frontend/test-results/
+*.trx
+*.coverage
+*.coveragexml
+
+# Temporary files
+*.tmp
+*.temp
+*~
 
 # Environment variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Package manager lock files (if using npm/yarn for any tooling)
+package-lock.json
+yarn.lock
+
+# Legacy Dependencies (deprecated Electron/Node.js app)
+frontend/node_modules/
+backend/bin/
+backend/obj/
+
+# MAUI Certificate files
+*.pfx
+*.p12
+
+# App-specific
+AppSettings.json
+appsettings.json
+appsettings.*.json
+
+# Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+
+# NuGet
+packages/
+*.nuget.props
+*.nuget.targets
+
+# MSTest test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NUNIT
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Benchmark.NET
+BenchmarkDotNet.Artifacts/

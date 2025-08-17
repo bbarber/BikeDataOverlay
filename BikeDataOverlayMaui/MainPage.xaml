@@ -1,0 +1,362 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:BikeDataOverlayMaui.Converters"
+             x:Class="BikeDataOverlayMaui.MainPage"
+             Title="Bike Data Overlay"
+             BackgroundColor="Black">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Value Converters -->
+            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+            <converters:BoolToConnectTextConverter x:Key="BoolToConnectTextConverter" />
+            <converters:BoolToConnectColorConverter x:Key="BoolToConnectColorConverter" />
+            <converters:BoolToHrColorConverter x:Key="BoolToHrColorConverter" />
+            <converters:BoolToZoneColorConverter x:Key="BoolToZoneColorConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
+        <!-- Main overlay containers -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <!-- Power Display -->
+        <Border Grid.Row="0" 
+                BackgroundColor="#1a1a1a" 
+                Stroke="#333" 
+                StrokeThickness="2"
+                Margin="20"
+                Padding="20"
+                HorizontalOptions="Start"
+                VerticalOptions="Start">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10"/>
+            </Border.StrokeShape>
+            
+            <StackLayout>
+                <StackLayout Orientation="Horizontal">
+                    <StackLayout>
+                        <Label Text="{Binding Watts}" 
+                               FontSize="48" 
+                               FontAttributes="Bold" 
+                               TextColor="White" 
+                               HorizontalOptions="Center"/>
+                        <Label Text="WATTS" 
+                               FontSize="14" 
+                               TextColor="#888" 
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+                    
+                    <!-- Device toggle button -->
+                    <Button Text="⚙️" 
+                            FontSize="16"
+                            BackgroundColor="#333"
+                            TextColor="White"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            CornerRadius="20"
+                            Command="{Binding ToggleDevicePanelCommand}"
+                            Margin="10,0,0,0"/>
+                </StackLayout>
+                
+                <!-- Device Panel -->
+                <Border IsVisible="{Binding IsDevicePanelVisible}"
+                        BackgroundColor="#2a2a2a" 
+                        Stroke="#444" 
+                        StrokeThickness="1"
+                        Margin="0,10,0,0"
+                        Padding="15">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8"/>
+                    </Border.StrokeShape>
+                    
+                    <StackLayout>
+                        <Label Text="Bluetooth Devices" 
+                               FontSize="16" 
+                               FontAttributes="Bold" 
+                               TextColor="White"
+                               Margin="0,0,0,10"/>
+                        
+                        <StackLayout Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+                            <Button Text="Scan for Devices" 
+                                    BackgroundColor="#007acc"
+                                    TextColor="White"
+                                    Command="{Binding ScanDevicesCommand}"
+                                    IsEnabled="{Binding IsScanning, Converter={StaticResource InvertedBoolConverter}}"/>
+                            <Button Text="Refresh" 
+                                    BackgroundColor="#555"
+                                    TextColor="White"
+                                    Command="{Binding LoadDevicesCommand}"/>
+                        </StackLayout>
+                        
+                        <Label Text="{Binding DeviceStatusText}" 
+                               FontSize="12" 
+                               TextColor="#ccc"
+                               Margin="0,0,0,10"/>
+                        
+                        <CollectionView ItemsSource="{Binding AvailableDevices}" MaximumHeightRequest="200">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="#333" 
+                                            Stroke="#555" 
+                                            StrokeThickness="1"
+                                            Margin="0,2"
+                                            Padding="10">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="5"/>
+                                        </Border.StrokeShape>
+                                        
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <StackLayout Grid.Column="0">
+                                                <Label Text="{Binding Name}" 
+                                                       FontSize="14" 
+                                                       FontAttributes="Bold" 
+                                                       TextColor="White"/>
+                                                <Label Text="{Binding DeviceInfo.Type}" 
+                                                       FontSize="12" 
+                                                       TextColor="#888"/>
+                                                <Label Text="{Binding Status}" 
+                                                       FontSize="12" 
+                                                       TextColor="{Binding IsConnected, Converter={StaticResource BoolToColorConverter}}"/>
+                                            </StackLayout>
+                                            
+                                            <Button Grid.Column="1"
+                                                    Text="{Binding IsConnected, Converter={StaticResource BoolToConnectTextConverter}}"
+                                                    BackgroundColor="{Binding IsConnected, Converter={StaticResource BoolToConnectColorConverter}}"
+                                                    TextColor="White"
+                                                    IsEnabled="{Binding CanConnect}"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ConnectToDeviceCommand}"
+                                                    CommandParameter="{Binding Id}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </StackLayout>
+                </Border>
+            </StackLayout>
+        </Border>
+        
+        <!-- Heart Rate Display -->
+        <Border Grid.Row="1" 
+                BackgroundColor="#1a1a1a" 
+                Stroke="#333" 
+                StrokeThickness="2"
+                Margin="20"
+                Padding="20"
+                HorizontalOptions="Start"
+                VerticalOptions="Start">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10"/>
+            </Border.StrokeShape>
+            
+            <StackLayout>
+                <StackLayout Orientation="Horizontal">
+                    <StackLayout>
+                        <Label Text="{Binding HeartRate}" 
+                               FontSize="48" 
+                               FontAttributes="Bold" 
+                               TextColor="{Binding IsHeartRateInZone, Converter={StaticResource BoolToHrColorConverter}}" 
+                               HorizontalOptions="Center"/>
+                        <Label Text="BPM" 
+                               FontSize="14" 
+                               TextColor="#888" 
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding HeartRateZoneText}" 
+                               FontSize="12" 
+                               TextColor="#888" 
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+                    
+                    <!-- HR Zone toggle button -->
+                    <Button Text="🎯" 
+                            FontSize="16"
+                            BackgroundColor="#333"
+                            TextColor="White"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            CornerRadius="20"
+                            Command="{Binding ToggleHrZonePanelCommand}"
+                            Margin="10,0,0,0"/>
+                </StackLayout>
+                
+                <!-- HR Zone Panel -->
+                <Border IsVisible="{Binding IsHrZonePanelVisible}"
+                        BackgroundColor="#2a2a2a" 
+                        Stroke="#444" 
+                        StrokeThickness="1"
+                        Margin="0,10,0,0"
+                        Padding="15">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="8"/>
+                    </Border.StrokeShape>
+                    
+                    <StackLayout>
+                        <Label Text="Heart Rate Zones" 
+                               FontSize="16" 
+                               FontAttributes="Bold" 
+                               TextColor="White"
+                               Margin="0,0,0,10"/>
+                        
+                        <Grid Margin="0,0,0,15">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackLayout Grid.Column="0">
+                                <Label Text="Your Age:" FontSize="12" TextColor="#ccc"/>
+                                <Entry Text="{Binding UserAge}" 
+                                       FontSize="14" 
+                                       TextColor="White"
+                                       BackgroundColor="#333"/>
+                            </StackLayout>
+                            
+                            <StackLayout Grid.Column="1" Margin="10,0,0,0">
+                                <Label Text="Resting HR:" FontSize="12" TextColor="#ccc"/>
+                                <Entry Text="{Binding RestingHR}" 
+                                       FontSize="14" 
+                                       TextColor="White"
+                                       BackgroundColor="#333"/>
+                            </StackLayout>
+                        </Grid>
+                        
+                        <Button Text="Update Zones" 
+                                BackgroundColor="#007acc"
+                                TextColor="White"
+                                Command="{Binding UpdateHeartRateConfigCommand}"
+                                Margin="0,0,0,10"/>
+                        
+                        <Label Text="Select Target Zone:" 
+                               FontSize="14" 
+                               FontAttributes="Bold" 
+                               TextColor="White"
+                               Margin="0,0,0,5"/>
+                        
+                        <CollectionView ItemsSource="{Binding HeartRateZones}" MaximumHeightRequest="200">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BackgroundColor="{Binding IsTargetZone, Converter={StaticResource BoolToZoneColorConverter}}" 
+                                            Stroke="#555" 
+                                            StrokeThickness="1"
+                                            Margin="0,2"
+                                            Padding="10">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="5"/>
+                                        </Border.StrokeShape>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectTargetZoneCommand}"
+                                                                  CommandParameter="{Binding ZoneNumber}"/>
+                                        </Border.GestureRecognizers>
+                                        
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <StackLayout Grid.Column="0">
+                                                <Label Text="{Binding Name, StringFormat='Zone {0}'}" 
+                                                       FontSize="14" 
+                                                       FontAttributes="Bold" 
+                                                       TextColor="White"/>
+                                                <Label Text="{Binding MinBpm, StringFormat='{0}-'}{Binding MaxBpm, StringFormat='{0} BPM'}" 
+                                                       FontSize="12" 
+                                                       TextColor="#888"/>
+                                                <Label Text="{Binding Description}" 
+                                                       FontSize="10" 
+                                                       TextColor="#666"/>
+                                            </StackLayout>
+                                            
+                                            <Label Grid.Column="1" 
+                                                   Text="✓" 
+                                                   FontSize="16" 
+                                                   TextColor="Green"
+                                                   IsVisible="{Binding IsTargetZone}"
+                                                   VerticalOptions="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </StackLayout>
+                </Border>
+            </StackLayout>
+        </Border>
+        
+        <!-- Timer Display -->
+        <Border Grid.Row="2" 
+                BackgroundColor="#1a1a1a" 
+                Stroke="#333" 
+                StrokeThickness="2"
+                Margin="20"
+                Padding="20"
+                HorizontalOptions="Start"
+                VerticalOptions="Start">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10"/>
+            </Border.StrokeShape>
+            
+            <StackLayout>
+                <StackLayout>
+                    <Label Text="{Binding TotalTime}" 
+                           FontSize="48" 
+                           FontAttributes="Bold" 
+                           TextColor="White" 
+                           HorizontalOptions="Center"/>
+                    <Label Text="TIME" 
+                           FontSize="14" 
+                           TextColor="#888" 
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+                
+                <!-- Timer Controls -->
+                <StackLayout Orientation="Horizontal" 
+                             HorizontalOptions="Center" 
+                             Spacing="10" 
+                             Margin="0,10,0,0">
+                    <Button Text="▶️" 
+                            FontSize="16"
+                            BackgroundColor="#007acc"
+                            TextColor="White"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            CornerRadius="20"
+                            Command="{Binding StartTimerCommand}"
+                            IsVisible="{Binding IsTimerRunning, Converter={StaticResource InvertedBoolConverter}}"/>
+                    
+                    <Button Text="⏸️" 
+                            FontSize="16"
+                            BackgroundColor="#ff6b35"
+                            TextColor="White"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            CornerRadius="20"
+                            Command="{Binding StopTimerCommand}"
+                            IsVisible="{Binding IsTimerRunning}"/>
+                    
+                    <Button Text="🔄" 
+                            FontSize="16"
+                            BackgroundColor="#333"
+                            TextColor="White"
+                            WidthRequest="40"
+                            HeightRequest="40"
+                            CornerRadius="20"
+                            Command="{Binding ResetTimerCommand}"/>
+                </StackLayout>
+            </StackLayout>
+        </Border>
+    </Grid>
+
+</ContentPage>
