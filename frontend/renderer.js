@@ -172,11 +172,12 @@ async function connectToDevice(deviceId) {
     try {
         statusEl.textContent = `Connecting to device...`;
         
-        const response = await axios.post(`${API_BASE_URL}/metrics/connection/connect`);
+        const response = await axios.post(`${API_BASE_URL}/metrics/connection/connect/${deviceId}`);
         const data = response.data;
         
         if (data.success || data.Success) {
-            statusEl.textContent = data.message || data.Message;
+            const deviceCount = data.connectedDevices || 1;
+            statusEl.textContent = `Connected! Total devices: ${deviceCount}`;
             loadDeviceList(); // Refresh the device list
         } else {
             statusEl.textContent = `Connection failed: ${data.message || data.Message}`;

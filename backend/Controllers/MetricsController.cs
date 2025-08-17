@@ -69,6 +69,32 @@ public class MetricsController : ControllerBase
             });
         }
     }
+
+    [HttpPost("connection/connect/{deviceId}")]
+    public async Task<ActionResult<object>> ConnectToSpecificDevice(string deviceId)
+    {
+        try
+        {
+            var success = await _bluetoothService.ConnectToDeviceAsync(deviceId);
+            return new
+            {
+                Success = success,
+                IsConnected = _bluetoothService.IsConnected,
+                DeviceName = _bluetoothService.ConnectedDeviceName,
+                ConnectedDevices = _bluetoothService.ConnectedDevices.Count,
+                Message = success ? $"Successfully connected to device" : $"Failed to connect to device {deviceId}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                Success = false,
+                IsConnected = false,
+                Message = $"Connection error: {ex.Message}"
+            });
+        }
+    }
     
     [HttpPost("connection/disconnect")]
     public async Task<ActionResult<object>> DisconnectFromTrainer()
@@ -144,26 +170,29 @@ public class MetricsController : ControllerBase
         {
             var devices = await _bluetoothService.ScanForDevicesAsync(TimeSpan.FromSeconds(10));
             
-            var deviceList = devices.Select(d => new
-            {
-                Id = d.DeviceId,
-                Name = d.Name,
-                Type = "Fitness Device",
-                IsConnected = d.IsConnected,
-                CanConnect = !d.IsConnected,
-                Status = d.IsConnected ? "Connected" : "Available",
-                LastSeen = DateTime.UtcNow,
-                DeviceInfo = d.DeviceInfo != null ? new
+            var deviceList = devices.Select(d => {
+                var isConnected = _bluetoothService.ConnectedDevices.ContainsKey(d.DeviceId);
+                return new
                 {
-                    Manufacturer = d.DeviceInfo.ManufacturerName ?? "Unknown",
-                    Model = d.DeviceInfo.ModelNumber ?? "Unknown",
-                    Type = d.DeviceInfo.MachineType.ToString()
-                } : new
-                {
-                    Manufacturer = "Unknown",
-                    Model = "Unknown", 
-                    Type = "Unknown"
-                }
+                    Id = d.DeviceId,
+                    Name = d.Name,
+                    Type = "Fitness Device",
+                    IsConnected = isConnected,
+                    CanConnect = !isConnected,
+                    Status = isConnected ? "Connected" : "Available",
+                    LastSeen = DateTime.UtcNow,
+                    DeviceInfo = d.DeviceInfo != null ? new
+                    {
+                        Manufacturer = d.DeviceInfo.ManufacturerName ?? "Unknown",
+                        Model = d.DeviceInfo.ModelNumber ?? "Unknown",
+                        Type = d.DeviceInfo.MachineType.ToString()
+                    } : new
+                    {
+                        Manufacturer = "Unknown",
+                        Model = "Unknown", 
+                        Type = "Unknown"
+                    }
+                };
             }).ToArray();
             
             return new

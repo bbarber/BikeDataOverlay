@@ -21,13 +21,14 @@ public class BluetoothTrainerService : IDisposable
     // Real Bluetooth scanning components
     private IBleDeviceScanner? _deviceScanner;
     private readonly List<IBleDevice> _discoveredDevices = new();
-    private IBleDevice? _connectedDevice;
+    private readonly Dictionary<string, IBleDevice> _connectedDevices = new();
     
     public event EventHandler<CyclingMetrics>? MetricsUpdated;
     public event EventHandler<bool>? ConnectionStatusChanged;
     
-    public bool IsConnected => _isConnected;
-    public string? ConnectedDeviceName => _connectedDeviceName;
+    public bool IsConnected => _connectedDevices.Any();
+    public string? ConnectedDeviceName => _connectedDevices.Any() ? string.Join(", ", _connectedDevices.Values.Select(d => d.Name)) : null;
+    public IReadOnlyDictionary<string, IBleDevice> ConnectedDevices => _connectedDevices;
     
     public BluetoothTrainerService()
     {
@@ -55,11 +56,10 @@ public class BluetoothTrainerService : IDisposable
                 return true;
             }
 
-            // Disconnect any existing device first
-            if (_connectedDevice != null)
+            // Disconnect any existing devices first
+            if (_connectedDevices.Any())
             {
-                await _connectedDevice.DisconnectAsync();
-                _connectedDevice = null;
+                await DisconnectAsync();
             }
 
             Console.WriteLine("Scanning for FTMS devices...");
@@ -71,37 +71,63 @@ public class BluetoothTrainerService : IDisposable
                 return await StartSimulationMode(cancellationToken);
             }
 
-            // Try to connect to the first available device
-            var targetDevice = devices.First();
-            Console.WriteLine($"Attempting to connect to: {targetDevice.Name}");
-            
-            var connected = await targetDevice.ConnectAsync(cancellationToken);
-            if (!connected)
+            // Try to connect to all available devices
+            var connectionResults = new List<bool>();
+            foreach (var device in devices)
             {
-                Console.WriteLine($"Failed to connect to {targetDevice.Name}. Falling back to simulation mode.");
+                Console.WriteLine($"Attempting to connect to: {device.Name}");
+                
+                var connected = await device.ConnectAsync(cancellationToken);
+                if (connected)
+                {
+                    _connectedDevices[device.DeviceId] = device;
+                    _connectedDeviceName = ConnectedDeviceName; // Update combined name
+                    
+                    // Set up data reception from real device
+                    device.DataReceived += OnRealDeviceDataReceived;
+                    device.ConnectionChanged += OnDeviceConnectionChanged;
+                    
+                    Console.WriteLine($"Successfully connected to: {device.Name}");
+                    connectionResults.Add(true);
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to connect to: {device.Name}");
+                    connectionResults.Add(false);
+                }
+            }
+
+            // Check if any devices connected
+            if (_connectedDevices.Any())
+            {
+                _isConnected = true;
+                // Use device info from first connected device for compatibility
+                _deviceInfo = _connectedDevices.Values.First().DeviceInfo;
+
+                // Start notifications for all connected devices
+                foreach (var device in _connectedDevices.Values)
+                {
+                    var notificationsStarted = await device.StartNotificationsAsync(cancellationToken);
+                    if (!notificationsStarted)
+                    {
+                        Console.WriteLine($"Failed to start notifications for {device.Name}, but connection is established");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Started notifications for {device.Name}");
+                    }
+                }
+                
+                ConnectionStatusChanged?.Invoke(this, true);
+                Console.WriteLine($"Successfully connected to {_connectedDevices.Count} device(s): {_connectedDeviceName}");
+                
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("Failed to connect to any devices. Falling back to simulation mode.");
                 return await StartSimulationMode(cancellationToken);
             }
-
-            _connectedDevice = targetDevice;
-            _isConnected = true;
-            _connectedDeviceName = targetDevice.Name;
-            _deviceInfo = targetDevice.DeviceInfo;
-
-            // Set up data reception from real device
-            _connectedDevice.DataReceived += OnRealDeviceDataReceived;
-            _connectedDevice.ConnectionChanged += OnDeviceConnectionChanged;
-
-            // Start notifications for real data
-            var notificationsStarted = await _connectedDevice.StartNotificationsAsync(cancellationToken);
-            if (!notificationsStarted)
-            {
-                Console.WriteLine("Failed to start notifications, but connection is established");
-            }
-            
-            ConnectionStatusChanged?.Invoke(this, true);
-            Console.WriteLine($"Successfully connected to real FTMS trainer: {_connectedDeviceName}");
-            
-            return true;
         }
         catch (Exception ex)
         {
@@ -247,13 +273,25 @@ public class BluetoothTrainerService : IDisposable
     {
         try
         {
-            if (!e.IsConnected)
+            if (!e.IsConnected && sender is IBleDevice device)
             {
                 Console.WriteLine($"Device {e.DeviceName} disconnected: {e.ErrorMessage}");
-                _isConnected = false;
-                _connectedDeviceName = null;
-                _connectedDevice = null;
-                ConnectionStatusChanged?.Invoke(this, false);
+                
+                // Remove from connected devices
+                var deviceToRemove = _connectedDevices.FirstOrDefault(kvp => kvp.Value == device);
+                if (!deviceToRemove.Equals(default(KeyValuePair<string, IBleDevice>)))
+                {
+                    _connectedDevices.Remove(deviceToRemove.Key);
+                    _connectedDeviceName = ConnectedDeviceName; // Update combined name
+                }
+                
+                // Update connection status
+                if (!_connectedDevices.Any())
+                {
+                    _isConnected = false;
+                    _connectedDeviceName = null;
+                    ConnectionStatusChanged?.Invoke(this, false);
+                }
             }
         }
         catch (Exception ex)
@@ -264,14 +302,34 @@ public class BluetoothTrainerService : IDisposable
 
     private void CheckConnection(object? state)
     {
-        // Check if real device is still connected
-        if (_connectedDevice != null && !_connectedDevice.IsConnected)
+        // Check if any connected devices are still connected
+        var disconnectedDevices = new List<string>();
+        
+        foreach (var kvp in _connectedDevices.ToList())
         {
-            Console.WriteLine("Real device connection lost, updating status");
+            if (!kvp.Value.IsConnected)
+            {
+                Console.WriteLine($"Device {kvp.Value.Name} connection lost, updating status");
+                disconnectedDevices.Add(kvp.Key);
+            }
+        }
+        
+        // Remove disconnected devices
+        foreach (var deviceId in disconnectedDevices)
+        {
+            _connectedDevices.Remove(deviceId);
+        }
+        
+        // Update overall connection status
+        if (!_connectedDevices.Any() && _isConnected)
+        {
             _isConnected = false;
             _connectedDeviceName = null;
-            _connectedDevice = null;
             ConnectionStatusChanged?.Invoke(this, false);
+        }
+        else if (_connectedDevices.Any())
+        {
+            _connectedDeviceName = ConnectedDeviceName; // Update combined name
         }
     }
     
@@ -293,23 +351,24 @@ public class BluetoothTrainerService : IDisposable
         {
             if (_isConnected)
             {
-                Console.WriteLine($"Disconnecting from trainer: {_connectedDeviceName}");
+                Console.WriteLine($"Disconnecting from devices: {_connectedDeviceName}");
                 
-                // Disconnect real device if connected
-                if (_connectedDevice != null)
+                // Disconnect all connected devices
+                foreach (var device in _connectedDevices.Values.ToList())
                 {
-                    _connectedDevice.DataReceived -= OnRealDeviceDataReceived;
-                    _connectedDevice.ConnectionChanged -= OnDeviceConnectionChanged;
-                    await _connectedDevice.DisconnectAsync();
-                    _connectedDevice = null;
+                    device.DataReceived -= OnRealDeviceDataReceived;
+                    device.ConnectionChanged -= OnDeviceConnectionChanged;
+                    await device.DisconnectAsync();
+                    Console.WriteLine($"Disconnected from {device.Name}");
                 }
                 
+                _connectedDevices.Clear();
                 _isConnected = false;
                 _connectedDeviceName = null;
                 _deviceInfo = null;
                 
                 ConnectionStatusChanged?.Invoke(this, false);
-                Console.WriteLine("Trainer disconnected successfully");
+                Console.WriteLine("All devices disconnected successfully");
             }
         }
         catch (Exception ex)
@@ -318,6 +377,69 @@ public class BluetoothTrainerService : IDisposable
         }
     }
     
+    public async Task<bool> ConnectToDeviceAsync(string deviceId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // First scan for devices to find the target device
+            var devices = await ScanForDevicesAsync(TimeSpan.FromSeconds(10));
+            var targetDevice = devices.FirstOrDefault(d => d.DeviceId == deviceId);
+            
+            if (targetDevice == null)
+            {
+                Console.WriteLine($"Device with ID {deviceId} not found");
+                return false;
+            }
+            
+            // Check if already connected
+            if (_connectedDevices.ContainsKey(deviceId))
+            {
+                Console.WriteLine($"Device {targetDevice.Name} is already connected");
+                return true;
+            }
+            
+            Console.WriteLine($"Attempting to connect to specific device: {targetDevice.Name}");
+            
+            var connected = await targetDevice.ConnectAsync(cancellationToken);
+            if (connected)
+            {
+                _connectedDevices[deviceId] = targetDevice;
+                _connectedDeviceName = ConnectedDeviceName; // Update combined name
+                _isConnected = true;
+                
+                // Set up data reception
+                targetDevice.DataReceived += OnRealDeviceDataReceived;
+                targetDevice.ConnectionChanged += OnDeviceConnectionChanged;
+                
+                // Start notifications
+                var notificationsStarted = await targetDevice.StartNotificationsAsync(cancellationToken);
+                if (!notificationsStarted)
+                {
+                    Console.WriteLine($"Failed to start notifications for {targetDevice.Name}, but connection is established");
+                }
+                else
+                {
+                    Console.WriteLine($"Started notifications for {targetDevice.Name}");
+                }
+                
+                ConnectionStatusChanged?.Invoke(this, true);
+                Console.WriteLine($"Successfully connected to: {targetDevice.Name}");
+                
+                return true;
+            }
+            else
+            {
+                Console.WriteLine($"Failed to connect to: {targetDevice.Name}");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error connecting to device {deviceId}: {ex.Message}");
+            return false;
+        }
+    }
+
     public async Task<List<IBleDevice>> ScanForDevicesAsync(TimeSpan? timeout = null)
     {
         try
@@ -454,14 +576,14 @@ public class BluetoothTrainerService : IDisposable
                 DisconnectAsync().Wait(TimeSpan.FromSeconds(2));
             }
             
-            // Dispose the connected device specifically
-            if (_connectedDevice != null)
+            // Dispose all connected devices specifically
+            foreach (var device in _connectedDevices.Values.ToList())
             {
-                _connectedDevice.DataReceived -= OnRealDeviceDataReceived;
-                _connectedDevice.ConnectionChanged -= OnDeviceConnectionChanged;
-                _connectedDevice.Dispose();
-                _connectedDevice = null;
+                device.DataReceived -= OnRealDeviceDataReceived;
+                device.ConnectionChanged -= OnDeviceConnectionChanged;
+                device.Dispose();
             }
+            _connectedDevices.Clear();
             
             // Dispose discovered devices
             foreach (var device in _discoveredDevices)
