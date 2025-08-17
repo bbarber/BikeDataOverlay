@@ -29,7 +29,13 @@
       "Bash(dotnet build:*)",
       "Bash(taskkill:*)",
       "Bash(/bashes)",
-      "mcp__playwright__playwright_navigate"
+      "mcp__playwright__playwright_navigate",
+      "Bash(brew:*)",
+      "Bash(export:*)",
+      "Bash(cmake:*)",
+      "Bash(make:*)",
+      "Bash(./BikeDataOverlay.app/Contents/MacOS/BikeDataOverlay)",
+      "Bash(./qt-app/build/BikeDataOverlay.app/Contents/MacOS/BikeDataOverlay)"
     ],
     "deny": [],
     "ask": [],

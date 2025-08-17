@@ -31,3 +31,19 @@ frontend/test-results/
 # Environment variables
 .env
 .env.local
+
+# Qt build outputs
+qt-app/build/
+qt-app/CMakeCache.txt
+qt-app/CMakeFiles/
+qt-app/cmake_install.cmake
+qt-app/Makefile
+qt-app/*.app
+qt-app/*.exe
+qt-app/moc_*
+qt-app/qrc_*
+qt-app/*.o
+qt-app/*.pro.user
+qt-app/*.pro.user.*
+bin/
+obj/
