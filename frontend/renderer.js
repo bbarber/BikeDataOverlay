@@ -526,6 +526,25 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // Auto-update zones when age or resting HR changes
+    document.getElementById('userAge').addEventListener('input', (e) => {
+        const age = parseInt(e.target.value);
+        if (age && age >= 18 && age <= 100) {
+            hrConfig.age = age;
+            updateHrZones();
+            saveHrConfig();
+        }
+    });
+    
+    document.getElementById('restingHR').addEventListener('input', (e) => {
+        const restingHR = parseInt(e.target.value);
+        if (restingHR && restingHR >= 40 && restingHR <= 100) {
+            hrConfig.restingHR = restingHR;
+            updateHrZones();
+            saveHrConfig();
+        }
+    });
+    
     document.getElementById('toggleTestMode').addEventListener('click', () => {
         testMode = !testMode;
         document.getElementById('toggleTestMode').textContent = `Test Mode: ${testMode ? 'ON' : 'OFF'}`;

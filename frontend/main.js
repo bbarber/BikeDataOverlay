@@ -32,11 +32,15 @@ function createOverlayWindow() {
             
             // Track when mouse is over interactive elements
             document.addEventListener('mouseover', (e) => {
-                const isInteractive = e.target.matches('button, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect, .timer-btn') ||
+                const isInteractive = e.target.matches('button, input, label, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect, .timer-btn, .zone-option') ||
                                     e.target.closest('button') ||
                                     e.target.closest('.device-panel') ||
+                                    e.target.closest('.hr-zone-panel') ||
                                     e.target.closest('.timer-controls') ||
-                                    e.target.id === 'toggleDevicePanel';
+                                    e.target.closest('.zone-option') ||
+                                    e.target.closest('label') ||
+                                    e.target.id === 'toggleDevicePanel' ||
+                                    e.target.id === 'toggleHrZonePanel';
                                     
                 if (isInteractive) {
                     if (!mouseOverButton) {
@@ -50,11 +54,15 @@ function createOverlayWindow() {
             // Track when mouse leaves interactive elements
             document.addEventListener('mouseout', (e) => {
                 const isLeavingInteractive = !e.relatedTarget || 
-                    (!e.relatedTarget.matches('button, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect, .timer-btn') &&
+                    (!e.relatedTarget.matches('button, input, label, .toggle-btn, .btn-primary, .btn-secondary, .btn-connect, .timer-btn, .zone-option') &&
                      !e.relatedTarget.closest('button') &&
                      !e.relatedTarget.closest('.device-panel') &&
+                     !e.relatedTarget.closest('.hr-zone-panel') &&
                      !e.relatedTarget.closest('.timer-controls') &&
-                     e.relatedTarget.id !== 'toggleDevicePanel');
+                     !e.relatedTarget.closest('.zone-option') &&
+                     !e.relatedTarget.closest('label') &&
+                     e.relatedTarget.id !== 'toggleDevicePanel' &&
+                     e.relatedTarget.id !== 'toggleHrZonePanel');
                      
                 if (isLeavingInteractive) {
                     if (mouseOverButton) {
