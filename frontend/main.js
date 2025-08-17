@@ -120,3 +120,33 @@ app.on('activate', () => {
         createOverlayWindow();
     }
 });
+
+// Handle process signals to ensure proper cleanup
+process.on('SIGINT', () => {
+    console.log('Received SIGINT, quitting...');
+    app.quit();
+});
+
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, quitting...');
+    app.quit();
+});
+
+// Force quit on Windows when parent process dies
+if (process.platform === 'win32') {
+    process.on('SIGHUP', () => {
+        console.log('Received SIGHUP, quitting...');
+        app.quit();
+    });
+    
+    // Check if parent process is still alive (Windows specific)
+    const checkParent = () => {
+        if (process.ppid === 1) {
+            console.log('Parent process died, quitting...');
+            app.quit();
+        }
+    };
+    
+    // Check every 2 seconds
+    setInterval(checkParent, 2000);
+}
