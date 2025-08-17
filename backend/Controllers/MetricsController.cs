@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using BikeDataApi.Models;
 using BikeDataApi.Services;
+using BikeDataApi.Services.Bluetooth.Abstractions;
 
 namespace BikeDataApi.Controllers;
 
@@ -8,9 +9,9 @@ namespace BikeDataApi.Controllers;
 [Route("api/[controller]")]
 public class MetricsController : ControllerBase
 {
-    private readonly BluetoothTrainerService _bluetoothService;
+    private readonly IBluetoothService _bluetoothService;
     
-    public MetricsController(BluetoothTrainerService bluetoothService)
+    public MetricsController(IBluetoothService bluetoothService)
     {
         _bluetoothService = bluetoothService;
     }
