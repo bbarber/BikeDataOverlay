@@ -71,14 +71,10 @@ Desktop.ini
 # Logs
 *.log
 *.binlog
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Test results
 TestResults/
 test-results/
-frontend/test-results/
 *.trx
 *.coverage
 *.coveragexml
@@ -95,14 +91,6 @@ frontend/test-results/
 .env.test.local
 .env.production.local
 
-# Package manager lock files (if using npm/yarn for any tooling)
-package-lock.json
-yarn.lock
-
-# Legacy Dependencies (deprecated Electron/Node.js app)
-frontend/node_modules/
-backend/bin/
-backend/obj/
 
 # MAUI Certificate files
 *.pfx

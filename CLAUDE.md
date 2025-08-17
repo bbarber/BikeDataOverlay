@@ -19,7 +19,7 @@
 ## PROJECT COMMANDS
 
 ```bash
-# MAUI Application (NEW ARCHITECTURE)
+# MAUI Application
 cd BikeDataOverlayMaui
 
 # Build for macOS
@@ -38,22 +38,11 @@ dotnet run -f net8.0-windows10.0.19041.0
 dotnet clean
 ```
 
-## ARCHITECTURE (UPDATED)
+## ARCHITECTURE
 
 - **Unified App**: .NET 8 MAUI cross-platform application
 - **Platforms**: macOS (Mac Catalyst) and Windows desktop
 - **Bluetooth**: Plugin.BLE for cross-platform BLE communication
 - **UI Pattern**: MVVM with CommunityToolkit.Mvvm
 - **Services**: Dependency injection for clean architecture
-
-## LEGACY ARCHITECTURE (DEPRECATED)
-
-The original Electron frontend + .NET backend architecture has been replaced:
-
-```bash
-# Legacy commands (no longer used)
-# Backend: dotnet build backend/BikeDataApi.csproj
-# Frontend: cd frontend && npm run dev
-# API Testing: curl http://localhost:5000/api/[endpoint]
-```
 

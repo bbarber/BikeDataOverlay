@@ -1,49 +1,80 @@
 # Bike Data Overlay
 
-A minimal cycling statistics overlay application built with Electron frontend and .NET backend.
+A cross-platform cycling data overlay application built with .NET MAUI, supporting macOS and Windows desktop platforms.
 
 ## Quick Start
 
 ```bash
-./start.sh
-```
-
-This will:
-1. Start the .NET Web API backend (port 5000)
-2. Install frontend dependencies
-3. Launch the Electron overlay window
-
-## Manual Start
-
-### Backend
-```bash
-cd backend
-dotnet run
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm start
+cd BikeDataOverlayMaui
+dotnet run -f net8.0-maccatalyst    # For macOS
+dotnet run -f net8.0-windows10.0.19041.0    # For Windows
 ```
 
 ## Features
 
-- Transparent overlay window showing Watts
-- Mock data for testing (random power values)
-- Always-on-top positioning
-- Electron + .NET (Windows only for bluetooth reasons)
+- **Real-time Cycling Metrics Display**:
+  - Power (Watts)
+  - Heart Rate (BPM) with zone indicators
+  - Timer functionality
+
+- **Bluetooth Connectivity**:
+  - FTMS (Fitness Machine Service) device support
+  - Heart Rate monitor integration
+  - Device scanning and connection management
+
+- **Heart Rate Zone Management**:
+  - Configurable age and resting heart rate
+  - 5-zone heart rate system
+  - Visual feedback for target zone compliance
+
+- **Cross-Platform Support**:
+  - macOS (via Mac Catalyst)
+  - Windows 10/11
 
 ## Architecture
 
-- **Backend**: .NET 8 Web API with mock cycling metrics
-- **Frontend**: Electron with transparent overlay window
-- **Communication**: HTTP REST API between frontend and backend
+- **Unified App**: .NET 8 MAUI cross-platform application
+- **Platforms**: macOS (Mac Catalyst) and Windows desktop
+- **Bluetooth**: Plugin.BLE for cross-platform BLE communication
+- **UI Pattern**: MVVM with CommunityToolkit.Mvvm
+- **Services**: Dependency injection for clean architecture
 
-## Next Steps
+## Building and Running
 
-- Replace mock data with real Bluetooth trainer communication
-- Add more metrics (cadence, speed, heart rate)
-- Implement overlay positioning controls
-- Add configuration UI
+### Prerequisites
+
+- .NET 8 SDK
+- Visual Studio 2022 or VS Code with MAUI extensions
+- Xcode (for macOS builds)
+
+### macOS
+
+```bash
+cd BikeDataOverlayMaui
+dotnet build -f net8.0-maccatalyst
+dotnet run -f net8.0-maccatalyst
+```
+
+### Windows
+
+```bash
+cd BikeDataOverlayMaui
+dotnet build -f net8.0-windows10.0.19041.0
+dotnet run -f net8.0-windows10.0.19041.0
+```
+
+## Project Structure
+
+```
+BikeDataOverlayMaui/
+├── Models/              # Data models
+├── Services/            # Business logic services
+├── ViewModels/          # MVVM ViewModels
+├── Views/               # UI Views
+├── Converters/          # Value converters
+└── Platforms/           # Platform-specific code
+    ├── MacCatalyst/
+    └── Windows/
+```
+
+For detailed documentation, see [BikeDataOverlayMaui/README.md](BikeDataOverlayMaui/README.md).
