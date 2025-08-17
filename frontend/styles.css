@@ -6,6 +6,17 @@ body {
     overflow: hidden;
 }
 
+/* Lucide icon styling for monochrome appearance */
+[data-lucide] {
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    width: 16px;
+    height: 16px;
+}
+
 .overlay-container {
     position: relative;
     display: flex;
@@ -43,7 +54,7 @@ body {
 
 /* Device Panel Styles */
 .device-panel {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 260px;
     width: 300px;
@@ -86,11 +97,283 @@ body {
     border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background 0.2s;
+    transition: all 0.2s;
     z-index: 10;
     pointer-events: auto;
     user-select: none;
     -webkit-user-select: none;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.overlay-container:hover .toggle-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.heart-rate-container {
+    position: absolute;
+    top: 120px;
+    left: 0;
+}
+
+.heart-rate-container .toggle-btn {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.heart-rate-container:hover .toggle-btn {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hr-zone-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+/* HR Zone Panel Styles */
+.hr-zone-panel {
+    position: fixed;
+    top: 0;
+    left: 260px;
+    width: 300px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: none;
+    z-index: 1000;
+}
+
+.hr-zone-panel.visible {
+    display: block;
+}
+
+.hr-zone-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hr-zone-panel-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.hr-zone-panel-content {
+    padding: 16px;
+}
+
+.hr-zone-config {
+    margin-bottom: 20px;
+}
+
+.zone-input-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.zone-input-group label {
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.zone-input-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    padding: 6px 8px;
+    width: 80px;
+    font-size: 14px;
+}
+
+.zone-input-group input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.zone-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.hr-zone-display h4 {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.zone-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.zone-item:last-child {
+    border-bottom: none;
+}
+
+.zone-item.target-zone {
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 4px 0;
+}
+
+.zone-name {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.zone-range {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-family: monospace;
+}
+
+/* Zone Selector Styles */
+.zone-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.zone-option {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.zone-option:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.zone-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.zone-option input[type="radio"]:checked + label {
+    background: rgba(34, 197, 94, 0.15);
+    border-left: 3px solid #22c55e;
+}
+
+.zone-option label {
+    display: block;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.zone-option label:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.zone-option .zone-name {
+    display: block;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.zone-option .zone-range {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    font-family: monospace;
+    margin-bottom: 2px;
+}
+
+.zone-option .zone-desc {
+    display: block;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-style: italic;
+}
+
+/* HR Value Color States */
+.metric-value.hr-in-zone {
+    color: #22c55e !important;
+}
+
+.metric-value.hr-out-of-zone {
+    color: #ef4444 !important;
+}
+
+.time-container {
+    position: absolute;
+    top: 240px;
+    left: 0;
+}
+
+.timer-controls {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s;
+}
+
+.time-container:hover .timer-controls {
+    opacity: 1;
+    visibility: visible;
+}
+
+.timer-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.timer-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.timer-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0.95);
+}
+
+.timer-btn.hidden {
+    display: none;
 }
 
 .toggle-btn:hover,

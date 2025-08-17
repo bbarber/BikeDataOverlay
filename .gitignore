@@ -25,6 +25,7 @@ Thumbs.db
 npm-debug.log*
 
 # Test results
+test-results/
 frontend/test-results/
 
 # Environment variables

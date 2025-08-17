@@ -7,9 +7,9 @@ test.describe('Toggle Button Behavior Tests', () => {
   let window;
 
   test.beforeEach(async () => {
-    // Launch Electron app
+    // Launch Electron app without DevTools for testing
     electronApp = await electron.launch({
-      args: [path.join(__dirname, '..', 'main.js'), '--dev'],
+      args: [path.join(__dirname, '..', 'main.js')], // Remove --dev flag for tests
       executablePath: require('electron')
     });
 
@@ -18,7 +18,10 @@ test.describe('Toggle Button Behavior Tests', () => {
     
     // Wait for the window to be ready and for the DOM to load
     await window.waitForLoadState('domcontentloaded');
-    await window.waitForTimeout(1000); // Extra wait for app initialization
+    
+    // Wait for app initialization and make sure core elements are present
+    await window.waitForSelector('.overlay-container', { timeout: 10000 });
+    await window.waitForTimeout(2000); // Extra wait for app initialization
   });
 
   test.afterEach(async () => {
@@ -30,7 +33,8 @@ test.describe('Toggle Button Behavior Tests', () => {
     // Initially, device panel should be hidden
     await expect(window.locator('#devicePanel')).not.toHaveClass(/visible/);
     
-    // Click toggle button to open panel
+    // Hover to make toggle button visible, then click to open panel
+    await window.locator('.overlay-container').first().hover();
     await window.locator('#toggleDevicePanel').click();
     
     // Device panel should now be visible
@@ -45,6 +49,7 @@ test.describe('Toggle Button Behavior Tests', () => {
 
   test('toggle button should stay responsive after multiple clicks', async () => {
     // Test multiple toggle operations
+    await window.locator('.overlay-container').first().hover();
     for (let i = 0; i < 5; i++) {
       // Open panel
       await window.locator('#toggleDevicePanel').click();
@@ -58,6 +63,7 @@ test.describe('Toggle Button Behavior Tests', () => {
 
   test('device panel should stay open after opening', async () => {
     // Open the device panel
+    await window.locator('.overlay-container').first().hover();
     await window.locator('#toggleDevicePanel').click();
     await expect(window.locator('#devicePanel')).toHaveClass(/visible/);
     
@@ -75,6 +81,7 @@ test.describe('Toggle Button Behavior Tests', () => {
 
   test('device panel mouse interaction should work', async () => {
     // Open the device panel
+    await window.locator('.overlay-container').first().hover();
     await window.locator('#toggleDevicePanel').click();
     await expect(window.locator('#devicePanel')).toHaveClass(/visible/);
     
