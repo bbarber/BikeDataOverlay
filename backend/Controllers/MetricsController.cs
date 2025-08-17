@@ -8,7 +8,6 @@ namespace BikeDataApi.Controllers;
 [Route("api/[controller]")]
 public class MetricsController : ControllerBase
 {
-    private static readonly Random _random = new();
     private readonly BluetoothTrainerService _bluetoothService;
     
     public MetricsController(BluetoothTrainerService bluetoothService)
@@ -24,13 +23,13 @@ public class MetricsController : ControllerBase
             return _bluetoothService.GetCurrentMetrics();
         }
         
-        // Fallback to mock data when not connected
+        // Return empty/zero data when not connected to real device
         return new CyclingMetrics
         {
-            Watts = 150 + _random.Next(-30, 50),
-            Cadence = 85 + _random.Next(-10, 15),
-            Speed = 25.5 + _random.NextDouble() * 5,
-            HeartRate = 140 + _random.Next(-15, 25)
+            Watts = 0,
+            Cadence = 0,
+            Speed = 0,
+            HeartRate = 0
         };
     }
     
