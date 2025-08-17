@@ -29,7 +29,8 @@
       "Bash(dotnet build:*)",
       "Bash(taskkill:*)",
       "Bash(/bashes)",
-      "mcp__playwright__playwright_navigate"
+      "mcp__playwright__playwright_navigate",
+      "Bash(open bin/Debug/net8.0-maccatalyst/maccatalyst-arm64/BikeDataOverlayMaui.app)"
     ],
     "deny": [],
     "ask": [],
