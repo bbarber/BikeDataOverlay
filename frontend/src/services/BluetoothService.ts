@@ -1,4 +1,4 @@
-import noble from '@abandonware/noble';
+import noble from '@stoprocent/noble';
 import { EventEmitter } from 'events';
 import { FTMSService } from './FTMSService';
 import { CyclingMetrics, BluetoothDevice } from '../types/CyclingMetrics';

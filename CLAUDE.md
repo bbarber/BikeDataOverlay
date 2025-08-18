@@ -2,8 +2,8 @@
 
 ## CORE PRINCIPLES
 
-1. **Build Often**: `dotnet build backend/BikeDataApi.csproj`
-2. **Test Manually**: Use curl commands to verify API outputs
+1. **Build Often**: `npm run build`
+2. **Test Functionality**: Test UI and Bluetooth manually
 3. **Track Progress**: Update todos throughout development
 4. **Clean Commits**: Only commit working code, always push
 5. **Never Mock**: Use real implementations for testing
@@ -18,24 +18,18 @@
 ## PROJECT COMMANDS
 
 ```bash
-# Backend
-dotnet build backend/BikeDataApi.csproj
-dotnet run --project backend/BikeDataApi.csproj
-
-# Frontend  
-cd frontend && npm run dev
-cd frontend && npm run test
+# Frontend Development
+npm run build
+npm run dev
+npm run test
 
 # Individual Playwright Tests
 npx playwright test tests/filename.spec.js -g "test name" --reporter=line
-
-# API Testing
-curl http://localhost:5000/api/[endpoint]
 ```
 
 ## ARCHITECTURE
 
-- **Backend**: .NET 8 Web API for Bluetooth communication
-- **Frontend**: Electron app for overlay UI
-- **Testing**: Playwright for frontend, manual curl for API
+- **Frontend**: Electron app with real Bluetooth communication via @stoprocent/noble
+- **Services**: BluetoothService for device communication, FTMSService for protocol parsing
+- **Testing**: Playwright for UI testing
 
