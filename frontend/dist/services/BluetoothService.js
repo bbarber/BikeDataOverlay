@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BluetoothService = void 0;
-const noble_1 = __importDefault(require("@abandonware/noble"));
+const noble_1 = __importDefault(require("@stoprocent/noble"));
 const events_1 = require("events");
 const FTMSService_1 = require("./FTMSService");
 class BluetoothService extends events_1.EventEmitter {

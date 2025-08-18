@@ -36,7 +36,9 @@
       "Bash(node server.js)",
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": [],

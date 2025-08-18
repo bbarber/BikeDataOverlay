@@ -147,24 +147,20 @@ function initializeBluetoothService() {
     }, 2000);
 }
 electron_1.ipcMain.handle('get-current-metrics', async () => {
-    const metrics = bluetoothService?.getCurrentMetrics() || {
+    return bluetoothService?.getCurrentMetrics() || {
         watts: 0,
         cadence: 0,
         speed: 0,
         heartRate: 0,
         timestamp: new Date().toISOString()
     };
-    console.log('[IPC-MAIN] get-current-metrics ->', metrics);
-    return metrics;
 });
 electron_1.ipcMain.handle('get-connection-status', async () => {
-    const status = bluetoothService?.getConnectionStatus() || {
+    return bluetoothService?.getConnectionStatus() || {
         isConnected: false,
         deviceName: null,
         timestamp: new Date().toISOString()
     };
-    console.log('[IPC-MAIN] get-connection-status ->', status);
-    return status;
 });
 electron_1.ipcMain.handle('scan-and-connect', async () => {
     try {
@@ -223,30 +219,25 @@ electron_1.ipcMain.handle('disconnect', async () => {
     }
 });
 electron_1.ipcMain.handle('scan-for-devices', async (event, timeoutSeconds = 15) => {
-    console.log('[IPC-MAIN] scan-for-devices <- timeoutSeconds:', timeoutSeconds);
     try {
         const timeout = Math.min(Math.max(timeoutSeconds, 5), 60) * 1000;
         const devices = await bluetoothService?.scanForDevices(timeout) || [];
-        const result = {
+        return {
             success: true,
             deviceCount: devices.length,
             devices: devices,
             scanTimeout: timeoutSeconds,
             message: `Found ${devices.length} Bluetooth fitness devices`
         };
-        console.log('[IPC-MAIN] scan-for-devices ->', result);
-        return result;
     }
     catch (error) {
-        const result = {
+        return {
             success: false,
             deviceCount: 0,
             devices: [],
             scanTimeout: timeoutSeconds,
             message: `Scan error: ${error.message}`
         };
-        console.log('[IPC-MAIN] scan-for-devices -> ERROR:', result);
-        return result;
     }
 });
 electron_1.ipcMain.handle('list-devices', async () => {
