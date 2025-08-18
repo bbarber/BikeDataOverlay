@@ -29,7 +29,14 @@
       "Bash(dotnet build:*)",
       "Bash(taskkill:*)",
       "Bash(/bashes)",
-      "mcp__playwright__playwright_navigate"
+      "mcp__playwright__playwright_navigate",
+      "Bash(timeout 5 npm start)",
+      "Bash(lsof:*)",
+      "Bash(pkill:*)",
+      "Bash(node server.js)",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": [],

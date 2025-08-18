@@ -2,21 +2,25 @@
   "name": "bike-data-overlay",
   "version": "1.0.0",
   "description": "Cycling statistics overlay application",
-  "main": "main.js",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "electron . --dev",
-    "dev": "electron . --dev",
+    "build": "tsc",
+    "dev": "tsc && electron dist/main.js --dev",
+    "start": "tsc && electron dist/main.js",
+    "watch": "tsc --watch",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
+    "@types/node": "^20.10.0",
     "chokidar": "^4.0.3",
     "electron": "^28.0.0",
-    "playwright": "^1.54.2"
+    "playwright": "^1.54.2",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
-    "axios": "^1.6.0",
+    "@abandonware/noble": "^1.9.2-26",
     "lucide": "^0.539.0"
   }
 }
