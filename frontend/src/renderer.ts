@@ -1,12 +1,6 @@
 import { CyclingMetrics, ScanResult, ConnectionResult, ConnectionStatus } from './types/CyclingMetrics';
 import { ipcRenderer } from 'electron';
 
-// Initialize Lucide icons when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof (window as any).lucide !== 'undefined') {
-    (window as any).lucide.createIcons();
-  }
-});
 
 let updateInterval: NodeJS.Timeout | null = null;
 let devicePanelVisible = false;
@@ -554,6 +548,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initialize displays
   updateTimerDisplay();
   loadHrConfig();
+  
 });
 
 window.addEventListener('beforeunload', stopMetricsUpdates);

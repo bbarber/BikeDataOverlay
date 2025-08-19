@@ -25,7 +25,7 @@ function createOverlayWindow(): void {
     }
   });
 
-  overlayWindow.loadFile(path.join(__dirname, '../index.html'));
+  overlayWindow.loadFile(path.join(__dirname, '../../index.html'));
   
   // Set up selective mouse event ignoring
   overlayWindow.webContents.once('dom-ready', () => {

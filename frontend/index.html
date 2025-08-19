@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bike Data Overlay</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="node_modules/lucide/dist/umd/lucide.js"></script>
 </head>
 <body>
     <div class="overlay-container">
@@ -16,7 +15,11 @@
         
         <!-- Toggle button for device panel - always visible -->
         <button id="toggleDevicePanel" class="toggle-btn">
-            <i data-lucide="settings"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+              <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+            </svg>
         </button>
         
         <!-- Device Management Panel -->
@@ -51,7 +54,12 @@
         
         <!-- HR Zone Settings button -->
         <button id="toggleHrZonePanel" class="toggle-btn">
-            <i data-lucide="target"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+              <path d="M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0" />
+              <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+            </svg>
         </button>
         
         <!-- HR Zone Configuration Panel -->
@@ -130,13 +138,28 @@
         <!-- Timer control buttons -->
         <div class="timer-controls">
             <button id="startTimer" class="timer-btn start-btn" onclick="startTimer()">
-                <i data-lucide="play"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M7 4v16l13 -8z" />
+                </svg>
             </button>
             <button id="stopTimer" class="timer-btn stop-btn hidden" onclick="stopTimer()">
-                <i data-lucide="pause"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M6 5m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" />
+                  <path d="M14 5m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" />
+                </svg>
             </button>
             <button id="resetTimer" class="timer-btn reset-btn" onclick="resetTimer()">
-                <i data-lucide="rotate-ccw"></i>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M9 4.55a8 8 0 0 1 6 14.9m0 -4.45v5h5" />
+                  <path d="M5.63 7.16l0 .01" />
+                  <path d="M4.06 11l0 .01" />
+                  <path d="M4.63 15.1l0 .01" />
+                  <path d="M7.16 18.37l0 .01" />
+                  <path d="M11 19.94l0 .01" />
+                </svg>
             </button>
         </div>
     </div>

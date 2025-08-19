@@ -6,16 +6,6 @@ body {
     overflow: hidden;
 }
 
-/* Lucide icon styling for monochrome appearance */
-[data-lucide] {
-    stroke: currentColor;
-    fill: none;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    width: 16px;
-    height: 16px;
-}
 
 .overlay-container {
     position: relative;

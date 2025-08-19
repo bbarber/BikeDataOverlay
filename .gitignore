@@ -9,6 +9,7 @@ backend/obj/
 *.pdb
 *.runtimeconfig.json
 *.deps.json
+frontend/dist/
 
 # IDE
 .vscode/

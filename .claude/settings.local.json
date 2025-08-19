@@ -38,7 +38,10 @@
       "Bash(npm run build:*)",
       "Bash(cp:*)",
       "WebFetch(domain:www.npmjs.com)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm run:*)",
+      "Bash(tsc)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": [],
