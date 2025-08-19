@@ -10,6 +10,7 @@ backend/obj/
 *.pdb
 *.runtimeconfig.json
 *.deps.json
+frontend/dist/
 
 # TypeScript/Node.js build artifacts
 dist/
@@ -46,3 +47,6 @@ frontend/test-results/
 # Environment variables
 .env
 .env.local
+
+bin/
+obj/

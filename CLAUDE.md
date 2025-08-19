@@ -2,8 +2,8 @@
 
 ## CORE PRINCIPLES
 
-1. **Build Often**: Test the Electron app frequently
-2. **Test Manually**: Use the app to verify BLE connectivity
+1. **Build Often**: Test the Electron app frequently with `npm run build`
+2. **Test Manually**: Use the app to verify BLE connectivity and UI functionality
 3. **Track Progress**: Update todos throughout development
 4. **Clean Commits**: Only commit working code, always push
 5. **Real BLE**: Use actual heart rate monitors for testing
@@ -18,13 +18,19 @@
 ## PROJECT COMMANDS
 
 ```bash
-# Frontend  
+# Electron App Development
+npm run start
+npm run build
+npm run test
+
+# Frontend (if separate)
 cd frontend && npm install
 cd frontend && npm start
 cd frontend && npm run dev
 
 # Testing
-cd frontend && npm test
+npm test
+cd frontend && npm test  # if separate frontend
 
 # Individual Playwright Tests
 # Run specific test file
@@ -42,7 +48,8 @@ npx playwright test --list
 
 ## ARCHITECTURE
 
-- **Frontend**: Electron app with native BLE support via noble
+- **Frontend**: Electron app with native BLE support via @abandonware/noble
 - **BLE Service**: Main process BLE handling with IPC communication
-- **Testing**: Playwright for frontend, manual BLE device testing
+- **Services**: BluetoothService for device communication, FTMSService for protocol parsing
+- **Testing**: Playwright for UI testing, manual BLE device testing
 

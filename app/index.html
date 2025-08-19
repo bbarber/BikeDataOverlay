@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bike Data Overlay</title>
+    <link rel="stylesheet" href="/src/index.css">
+    <script type="module" src="/src/renderer.ts"></script>
+</head>
+<body>
+    <div class="overlay-container">
+        <div class="metric-display">
+            <div class="metric-value" id="watts">--</div>
+            <div class="metric-label">WATTS</div>
+        </div>
+        
+        <!-- Toggle button for device panel - always visible -->
+        <button id="toggleDevicePanel" class="toggle-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+              <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+            </svg>
+        </button>
+        
+        <!-- Device Management Panel -->
+        <div class="device-panel" id="devicePanel">
+            <div class="device-panel-header">
+                <h3>Bluetooth Devices</h3>
+            </div>
+            
+            <div class="device-panel-content" id="devicePanelContent">
+                <div class="device-controls">
+                    <button id="scanDevicesBtn" class="btn-primary">Scan for Devices</button>
+                    <button id="refreshDevicesBtn" class="btn-secondary">Refresh</button>
+                </div>
+                
+                <div class="device-status" id="deviceStatus">
+                    <span class="status-text">Ready to scan</span>
+                </div>
+                
+                <div class="device-list" id="deviceList">
+                    <div class="no-devices">No devices found. Click "Scan for Devices" to search for fitness equipment.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay-container heart-rate-container">
+        <div class="metric-display">
+            <div class="metric-value" id="heartRate">--</div>
+            <div class="metric-label">BPM</div>
+            <div class="hr-zone-label" id="hrZoneLabel">Zone 1</div>
+        </div>
+        
+        <!-- HR Zone Settings button -->
+        <button id="toggleHrZonePanel" class="toggle-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+              <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+              <path d="M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0" />
+              <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+            </svg>
+        </button>
+        
+        <!-- HR Zone Configuration Panel -->
+        <div class="hr-zone-panel" id="hrZonePanel">
+            <div class="hr-zone-panel-header">
+                <h3>Heart Rate Zones</h3>
+            </div>
+            
+            <div class="hr-zone-panel-content">
+                <div class="hr-zone-config">
+                    <div class="zone-input-group">
+                        <label for="userAge">Your Age:</label>
+                        <input type="number" id="userAge" min="18" max="100" value="30">
+                    </div>
+                    <div class="zone-input-group">
+                        <label for="restingHR">Resting HR (optional):</label>
+                        <input type="number" id="restingHR" min="40" max="100" value="60" placeholder="60">
+                    </div>
+                </div>
+                
+                <div class="hr-zone-display">
+                    <h4>Select Target Zone:</h4>
+                    <div class="zone-selector">
+                        <div class="zone-option" data-zone="1">
+                            <input type="radio" id="zone1" name="targetZone" value="1">
+                            <label for="zone1">
+                                <span class="zone-name">Zone 1 - Recovery</span>
+                                <span class="zone-range" id="zone1Range">104-124 BPM</span>
+                                <span class="zone-desc">Active recovery, very light</span>
+                            </label>
+                        </div>
+                        <div class="zone-option" data-zone="2">
+                            <input type="radio" id="zone2" name="targetZone" value="2" checked>
+                            <label for="zone2">
+                                <span class="zone-name">Zone 2 - Aerobic</span>
+                                <span class="zone-range" id="zone2Range">124-143 BPM</span>
+                                <span class="zone-desc">Fat burning, endurance</span>
+                            </label>
+                        </div>
+                        <div class="zone-option" data-zone="3">
+                            <input type="radio" id="zone3" name="targetZone" value="3">
+                            <label for="zone3">
+                                <span class="zone-name">Zone 3 - Moderate</span>
+                                <span class="zone-range" id="zone3Range">143-162 BPM</span>
+                                <span class="zone-desc">Aerobic fitness</span>
+                            </label>
+                        </div>
+                        <div class="zone-option" data-zone="4">
+                            <input type="radio" id="zone4" name="targetZone" value="4">
+                            <label for="zone4">
+                                <span class="zone-name">Zone 4 - Hard</span>
+                                <span class="zone-range" id="zone4Range">162-181 BPM</span>
+                                <span class="zone-desc">Lactate threshold</span>
+                            </label>
+                        </div>
+                        <div class="zone-option" data-zone="5">
+                            <input type="radio" id="zone5" name="targetZone" value="5">
+                            <label for="zone5">
+                                <span class="zone-name">Zone 5 - Maximal</span>
+                                <span class="zone-range" id="zone5Range">181-190 BPM</span>
+                                <span class="zone-desc">VO2 max, very hard</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay-container time-container">
+        <div class="metric-display">
+            <div class="metric-value" id="totalTime">00:00</div>
+            <div class="metric-label">TIME</div>
+        </div>
+        
+        <!-- Timer control buttons -->
+        <div class="timer-controls">
+            <button id="startTimer" class="timer-btn start-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M7 4v16l13 -8z" />
+                </svg>
+            </button>
+            <button id="stopTimer" class="timer-btn stop-btn hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M6 5m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" />
+                  <path d="M14 5m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" />
+                </svg>
+            </button>
+            <button id="resetTimer" class="timer-btn reset-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4c4c4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M9 4.55a8 8 0 0 1 6 14.9m0 -4.45v5h5" />
+                  <path d="M5.63 7.16l0 .01" />
+                  <path d="M4.06 11l0 .01" />
+                  <path d="M4.63 15.1l0 .01" />
+                  <path d="M7.16 18.37l0 .01" />
+                  <path d="M11 19.94l0 .01" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</body>
+</html>
