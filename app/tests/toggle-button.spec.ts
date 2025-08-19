@@ -1,27 +1,18 @@
 import { test, expect, ElectronApplication, Page } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import * as path from 'path';
+import { setupElectronTest, waitForAppInitialization } from './test-helpers';
 
 test.describe('Toggle Button Behavior Tests', () => {
   let electronApp: ElectronApplication;
   let window: Page;
 
   test.beforeEach(async () => {
-    // Launch Electron app without DevTools for testing
-    electronApp = await electron.launch({
-      args: [path.join(__dirname, '..', 'main.js')], // Remove --dev flag for tests
-      executablePath: require('electron')
-    });
-
-    // Get the first window that the app opens
-    window = await electronApp.firstWindow();
-    
-    // Wait for the window to be ready and for the DOM to load
-    await window.waitForLoadState('domcontentloaded');
+    // Launch Electron app using helper
+    const setup = await setupElectronTest();
+    electronApp = setup.electronApp;
+    window = setup.window;
     
     // Wait for app initialization and make sure core elements are present
-    await window.waitForSelector('.overlay-container', { timeout: 10000 });
-    await window.waitForTimeout(2000); // Extra wait for app initialization
+    await waitForAppInitialization(window, '.overlay-container');
   });
 
   test.afterEach(async () => {

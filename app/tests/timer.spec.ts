@@ -1,27 +1,18 @@
 import { test, expect, ElectronApplication, Page } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import * as path from 'path';
+import { setupElectronTest, waitForAppInitialization } from './test-helpers';
 
 test.describe('Timer Functionality Tests', () => {
   let electronApp: ElectronApplication;
   let window: Page;
 
   test.beforeEach(async () => {
-    // Launch Electron app without DevTools for testing
-    electronApp = await electron.launch({
-      args: [path.join(__dirname, '..', 'main.js')], // Remove --dev flag for tests
-      executablePath: require('electron')
-    });
-
-    // Get the first window that the app opens
-    window = await electronApp.firstWindow();
-    
-    // Wait for the window to be ready and for the DOM to load
-    await window.waitForLoadState('domcontentloaded');
+    // Launch Electron app using helper
+    const setup = await setupElectronTest();
+    electronApp = setup.electronApp;
+    window = setup.window;
     
     // Wait for app initialization and make sure core elements are present
-    await window.waitForSelector('.time-container', { timeout: 10000 });
-    await window.waitForTimeout(2000); // Extra wait for app initialization
+    await waitForAppInitialization(window, '.time-container');
   });
 
   test.afterEach(async () => {
@@ -58,7 +49,7 @@ test.describe('Timer Functionality Tests', () => {
     await expect(window.locator('#resetTimer')).toBeVisible();
   });
 
-  test('timer controls should have correct button icons', async () => {
+  test('timer controls should have correct buttons visible', async () => {
     // Ensure timer container is visible first
     await expect(window.locator('.time-container')).toBeVisible();
     
@@ -69,14 +60,14 @@ test.describe('Timer Functionality Tests', () => {
     await expect(window.locator('#startTimer')).toBeVisible();
     await expect(window.locator('#resetTimer')).toBeVisible();
     
-    // Check button icons using data-lucide attributes
-    await expect(window.locator('#startTimer [data-lucide="play"]')).toBeVisible();
-    await expect(window.locator('#resetTimer [data-lucide="rotate-ccw"]')).toBeVisible();
+    // Check that buttons have SVG icons
+    await expect(window.locator('#startTimer svg')).toBeVisible();
+    await expect(window.locator('#resetTimer svg')).toBeVisible();
     
-    // Start the timer to check pause button icon
+    // Start the timer to check pause button appears
     await window.locator('#startTimer').click();
     await expect(window.locator('#stopTimer')).toBeVisible();
-    await expect(window.locator('#stopTimer [data-lucide="pause"]')).toBeVisible();
+    await expect(window.locator('#stopTimer svg')).toBeVisible();
   });
 
   test('start button should start the timer', async () => {

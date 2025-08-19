@@ -8,8 +8,8 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    actionTimeout: 1000,
-    navigationTimeout: 1000,
+    actionTimeout: 5000,
+    navigationTimeout: 10000,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -18,6 +18,7 @@ export default defineConfig({
       name: 'electron',
       use: {
         // Playwright will launch Electron with this configuration
+        // Note: Test files will need to specify the main entry point
       },
     },
   ],

@@ -1,22 +1,18 @@
 import { test, expect, ElectronApplication, Page } from '@playwright/test';
-import { _electron as electron } from 'playwright';
-import * as path from 'path';
+import { setupElectronTest, waitForAppInitialization } from './test-helpers';
 
 test.describe('Heart Rate Zones Tests', () => {
   let electronApp: ElectronApplication;
   let window: Page;
 
   test.beforeEach(async () => {
-    // Launch Electron app
-    electronApp = await electron.launch({
-      args: [path.join(__dirname, '..', 'main.js')],
-      executablePath: require('electron')
-    });
-
-    window = await electronApp.firstWindow();
-    await window.waitForLoadState('domcontentloaded');
-    await window.waitForSelector('.heart-rate-container', { timeout: 10000 });
-    await window.waitForTimeout(2000);
+    // Launch Electron app using helper
+    const setup = await setupElectronTest();
+    electronApp = setup.electronApp;
+    window = setup.window;
+    
+    // Wait for app initialization and make sure core elements are present
+    await waitForAppInitialization(window, '.heart-rate-container');
   });
 
   test.afterEach(async () => {

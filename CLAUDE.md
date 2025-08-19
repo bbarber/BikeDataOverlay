@@ -19,8 +19,7 @@
 
 ```bash
 # Frontend Development
-npm run build
-npm run dev
+npm run start
 npm run test
 
 # Individual Playwright Tests
