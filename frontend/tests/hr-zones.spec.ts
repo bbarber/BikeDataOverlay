@@ -1,10 +1,10 @@
-const { test, expect } = require('@playwright/test');
-const { _electron: electron } = require('playwright');
-const path = require('path');
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
+import { _electron as electron } from 'playwright';
+import * as path from 'path';
 
 test.describe('Heart Rate Zones Tests', () => {
-  let electronApp;
-  let window;
+  let electronApp: ElectronApplication;
+  let window: Page;
 
   test.beforeEach(async () => {
     // Launch Electron app

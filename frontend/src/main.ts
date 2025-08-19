@@ -155,7 +155,7 @@ ipcMain.handle('scan-and-connect', async (): Promise<ConnectionResult> => {
     return {
       success: success || false,
       isConnected: status?.isConnected || false,
-      deviceName: status?.deviceName || null,
+      deviceName: status?.deviceName || undefined,
       message: success ? 'Successfully connected to trainer' : 'Failed to connect to trainer'
     };
   } catch (error: any) {
@@ -174,7 +174,7 @@ ipcMain.handle('connect-to-device', async (event, deviceId: string): Promise<Con
     return {
       success: success || false,
       isConnected: status?.isConnected || false,
-      deviceName: status?.deviceName || null,
+      deviceName: status?.deviceName || undefined,
       connectedDevices: bluetoothService?.getConnectedDevicesCount() || 0,
       message: success ? 'Successfully connected to device' : `Failed to connect to device ${deviceId}`
     };

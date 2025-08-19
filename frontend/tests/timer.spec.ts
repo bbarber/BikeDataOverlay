@@ -1,10 +1,10 @@
-const { test, expect } = require('@playwright/test');
-const { _electron: electron } = require('playwright');
-const path = require('path');
+import { test, expect, ElectronApplication, Page } from '@playwright/test';
+import { _electron as electron } from 'playwright';
+import * as path from 'path';
 
 test.describe('Timer Functionality Tests', () => {
-  let electronApp;
-  let window;
+  let electronApp: ElectronApplication;
+  let window: Page;
 
   test.beforeEach(async () => {
     // Launch Electron app without DevTools for testing
@@ -155,7 +155,8 @@ test.describe('Timer Functionality Tests', () => {
     const newTime = await window.locator('#totalTime').textContent();
     
     // Parse times for comparison
-    const parseTime = (timeStr) => {
+    const parseTime = (timeStr: string | null): number => {
+      if (!timeStr) return 0;
       const [minutes, seconds] = timeStr.split(':').map(Number);
       return minutes * 60 + seconds;
     };
@@ -227,7 +228,8 @@ test.describe('Timer Functionality Tests', () => {
     timeText = await window.locator('#totalTime').textContent();
     
     // 6. Verify resumed and time increased
-    const parseTime = (timeStr) => {
+    const parseTime = (timeStr: string | null): number => {
+      if (!timeStr) return 0;
       const [minutes, seconds] = timeStr.split(':').map(Number);
       return minutes * 60 + seconds;
     };

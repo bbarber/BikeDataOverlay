@@ -1,6 +1,5 @@
 import { CyclingMetrics, ScanResult, ConnectionResult, ConnectionStatus } from './types/CyclingMetrics';
-
-const { ipcRenderer } = require('electron');
+import { ipcRenderer } from 'electron';
 
 // Initialize Lucide icons when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
