@@ -311,10 +311,12 @@ body {
 /* HR Value Color States */
 .metric-value.hr-in-zone {
     color: #22c55e !important;
+    text-shadow: 0 0 10px rgba(34, 197, 94, 0.5) !important;
 }
 
 .metric-value.hr-out-of-zone {
     color: #ef4444 !important;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
 }
 
 .time-container {
