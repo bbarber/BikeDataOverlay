@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bike Data Overlay</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="node_modules/lucide/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
     <div class="overlay-container">
@@ -141,5 +141,9 @@
         </div>
     </div>
     <script src="../dist/renderer.js"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
 </body>
 </html>
