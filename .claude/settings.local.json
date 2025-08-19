@@ -41,7 +41,9 @@
       "Bash(npm uninstall:*)",
       "Bash(npm run:*)",
       "Bash(tsc)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm start:*)",
+      "Bash(open:*)"
     ],
     "deny": [],
     "ask": [],

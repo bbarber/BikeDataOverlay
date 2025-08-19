@@ -43,6 +43,7 @@ export class BluetoothService extends EventEmitter {
   private isScanning = false;
   private scanTimeout: NodeJS.Timeout | null = null;
   private simulationInterval: NodeJS.Timeout | null = null;
+  private showAllDevices = false;
 
   constructor() {
     super();
@@ -88,15 +89,10 @@ export class BluetoothService extends EventEmitter {
   }
 
   private handleDeviceDiscovered(peripheral: NoblePeripheral): void {
-    const hasHeartRateService = peripheral.advertisement.serviceUuids.includes('180d');
-    const hasCyclingPowerService = peripheral.advertisement.serviceUuids.includes('1818');
-    const hasFTMSService = peripheral.advertisement.serviceUuids.includes('1826');
-    const hasCyclingSpeedCadenceService = peripheral.advertisement.serviceUuids.includes('1816');
+    const deviceName = peripheral.advertisement.localName || peripheral.advertisement.shortLocalName || `Unknown Device (${peripheral.id})`;
     
-    if (hasHeartRateService || hasCyclingPowerService || hasFTMSService || hasCyclingSpeedCadenceService) {
-      const deviceName = peripheral.advertisement.localName || peripheral.advertisement.shortLocalName || `Unknown Device (${peripheral.id})`;
-      
-      console.log(`Discovered fitness device: ${deviceName} (${peripheral.id})`);
+    if (this.showAllDevices) {
+      console.log(`Discovered BLE device: ${deviceName} (${peripheral.id})`);
       console.log(`  Services: ${peripheral.advertisement.serviceUuids.join(', ')}`);
       
       const device: DiscoveredDevice = {
@@ -109,6 +105,27 @@ export class BluetoothService extends EventEmitter {
       };
       
       this.discoveredDevices.set(peripheral.id, device);
+    } else {
+      const hasHeartRateService = peripheral.advertisement.serviceUuids.includes('180d');
+      const hasCyclingPowerService = peripheral.advertisement.serviceUuids.includes('1818');
+      const hasFTMSService = peripheral.advertisement.serviceUuids.includes('1826');
+      const hasCyclingSpeedCadenceService = peripheral.advertisement.serviceUuids.includes('1816');
+      
+      if (hasHeartRateService || hasCyclingPowerService || hasFTMSService || hasCyclingSpeedCadenceService) {
+        console.log(`Discovered fitness device: ${deviceName} (${peripheral.id})`);
+        console.log(`  Services: ${peripheral.advertisement.serviceUuids.join(', ')}`);
+        
+        const device: DiscoveredDevice = {
+          id: peripheral.id,
+          name: deviceName,
+          peripheral: peripheral,
+          isConnected: false,
+          deviceInfo: null,
+          services: peripheral.advertisement.serviceUuids
+        };
+        
+        this.discoveredDevices.set(peripheral.id, device);
+      }
     }
   }
 
@@ -128,14 +145,17 @@ export class BluetoothService extends EventEmitter {
 
       console.log(`Starting Bluetooth scan for ${timeoutMs / 1000} seconds...`);
 
-      const serviceUuids = [
-        '180d', // Heart Rate Service
-        '1818', // Cycling Power Service
-        '1826', // Fitness Machine Service (FTMS)
-        '1816'  // Cycling Speed and Cadence Service
-      ];
-
-      noble.startScanning(serviceUuids, false);
+      if (this.showAllDevices) {
+        noble.startScanning([], false);
+      } else {
+        const serviceUuids = [
+          '180d', // Heart Rate Service
+          '1818', // Cycling Power Service
+          '1826', // Fitness Machine Service (FTMS)
+          '1816'  // Cycling Speed and Cadence Service
+        ];
+        noble.startScanning(serviceUuids, false);
+      }
 
       this.scanTimeout = setTimeout(() => {
         noble.stopScanning();
@@ -446,5 +466,14 @@ export class BluetoothService extends EventEmitter {
 
   getConnectedDevicesCount(): number {
     return this.connectedDevices.size;
+  }
+
+  setShowAllDevices(showAll: boolean): void {
+    this.showAllDevices = showAll;
+    console.log(`Device filter mode changed: ${showAll ? 'showing all devices' : 'fitness devices only'}`);
+  }
+
+  getShowAllDevices(): boolean {
+    return this.showAllDevices;
   }
 }

@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   disconnect: (): Promise<ConnectionResult> => ipcRenderer.invoke('disconnect'),
   scanForDevices: (timeoutSeconds?: number): Promise<ScanResult> => ipcRenderer.invoke('scan-for-devices', timeoutSeconds),
   listDevices: (): Promise<ScanResult> => ipcRenderer.invoke('list-devices'),
+  setShowAllDevices: (showAll: boolean): Promise<boolean> => ipcRenderer.invoke('set-show-all-devices', showAll),
+  getShowAllDevices: (): Promise<boolean> => ipcRenderer.invoke('get-show-all-devices'),
 
   // Event listeners
   onMetricsUpdate: (callback: (metrics: CyclingMetrics) => void) => {
@@ -41,6 +43,8 @@ declare global {
       disconnect(): Promise<ConnectionResult>;
       scanForDevices(timeoutSeconds?: number): Promise<ScanResult>;
       listDevices(): Promise<ScanResult>;
+      setShowAllDevices(showAll: boolean): Promise<boolean>;
+      getShowAllDevices(): Promise<boolean>;
       onMetricsUpdate(callback: (metrics: CyclingMetrics) => void): () => void;
       onConnectionStatusChanged(callback: (status: { isConnected: boolean; deviceName: string | null }) => void): () => void;
     };

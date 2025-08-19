@@ -171,12 +171,15 @@ ipcMain.handle('scan-for-devices', async (event, timeoutSeconds: number = 15): P
     const timeout = Math.min(Math.max(timeoutSeconds, 5), 60) * 1000;
     const devices = await bluetoothService?.scanForDevices(timeout) || [];
 
+    const showAll = bluetoothService?.getShowAllDevices() || false;
+    const deviceTypeText = showAll ? 'Bluetooth devices' : 'Bluetooth fitness devices';
+
     return {
       success: true,
       deviceCount: devices.length,
       devices: devices,
       scanTimeout: timeoutSeconds,
-      message: `Found ${devices.length} Bluetooth fitness devices`
+      message: `Found ${devices.length} ${deviceTypeText}`
     };
   } catch (error: any) {
     return {
@@ -202,14 +205,17 @@ ipcMain.handle('list-devices', async (): Promise<ScanResult> => {
       };
     });
 
+    const showAll = bluetoothService?.getShowAllDevices() || false;
+    const deviceTypeText = showAll ? 'devices' : 'fitness devices';
+
     return {
       success: true,
       deviceCount: deviceList.length,
       devices: deviceList,
       scanTimestamp: new Date().toISOString(),
       message: deviceList.length > 0
-        ? `Found ${deviceList.length} fitness devices`
-        : 'No fitness devices found. Make sure your devices are turned on and in pairing mode.'
+        ? `Found ${deviceList.length} ${deviceTypeText}`
+        : `No ${deviceTypeText} found. Make sure your devices are turned on and in pairing mode.`
     };
   } catch (error: any) {
     return {
@@ -219,6 +225,15 @@ ipcMain.handle('list-devices', async (): Promise<ScanResult> => {
       message: `Device listing error: ${error.message}`
     };
   }
+});
+
+ipcMain.handle('set-show-all-devices', async (event, showAll: boolean): Promise<boolean> => {
+  bluetoothService?.setShowAllDevices(showAll);
+  return bluetoothService?.getShowAllDevices() || false;
+});
+
+ipcMain.handle('get-show-all-devices', async (): Promise<boolean> => {
+  return bluetoothService?.getShowAllDevices() || false;
 });
 
 // This method will be called when Electron has finished

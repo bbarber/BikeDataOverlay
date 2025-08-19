@@ -18,6 +18,7 @@ import { CyclingMetrics, ScanResult, ConnectionResult } from './types/CyclingMet
 let updateInterval: NodeJS.Timeout | null = null;
 let devicePanelVisible = false;
 let isScanning = false;
+let showAllDevices = false;
 
 // Timer variables
 let timerInterval: NodeJS.Timeout | null = null;
@@ -64,6 +65,7 @@ function initializeApp(): void {
   // Initialize displays
   updateTimerDisplay();
   loadHrConfig();
+  loadShowAllDevicesState();
   
   // Set up event listeners
   setupEventListeners();
@@ -82,6 +84,10 @@ function setupEventListeners(): void {
   // Device management buttons
   document.getElementById('scanDevicesBtn')?.addEventListener('click', scanForDevices);
   document.getElementById('refreshDevicesBtn')?.addEventListener('click', loadDeviceList);
+  
+  // Device filter toggle
+  const showAllToggle = document.getElementById('showAllDevicesToggle') as HTMLInputElement;
+  showAllToggle?.addEventListener('change', handleShowAllDevicesToggle);
   
   // HR Zone panel event listeners
   const hrZoneToggleBtn = document.getElementById('toggleHrZonePanel');
@@ -257,7 +263,8 @@ function displayDevices(devices: any[]): void {
   if (!deviceList) return;
   
   if (!devices || devices.length === 0) {
-    deviceList.innerHTML = '<div class="no-devices">No fitness devices found. Click "Scan for Devices" to search for equipment.</div>';
+    const deviceType = showAllDevices ? 'devices' : 'fitness devices';
+    deviceList.innerHTML = `<div class="no-devices">No ${deviceType} found. Click "Scan for Devices" to search for equipment.</div>`;
     return;
   }
   
@@ -566,6 +573,40 @@ function toggleDevicePanel(): void {
   } else {
     devicePanel?.classList.remove('visible');
     console.log('Device panel hidden');
+  }
+}
+
+async function loadShowAllDevicesState(): Promise<void> {
+  try {
+    showAllDevices = await window.electronAPI.getShowAllDevices();
+    const toggle = document.getElementById('showAllDevicesToggle') as HTMLInputElement;
+    if (toggle) {
+      toggle.checked = showAllDevices;
+    }
+  } catch (error) {
+    console.error('Failed to load show all devices state:', error);
+  }
+}
+
+async function handleShowAllDevicesToggle(event: Event): Promise<void> {
+  const target = event.target as HTMLInputElement;
+  showAllDevices = target.checked;
+  
+  try {
+    const result = await window.electronAPI.setShowAllDevices(showAllDevices);
+    console.log(`Device filter mode changed: ${result ? 'showing all devices' : 'fitness devices only'}`);
+    
+    // Update the no-devices message if the device list is empty
+    const deviceList = document.getElementById('deviceList');
+    if (deviceList && deviceList.querySelector('.no-devices')) {
+      const deviceType = showAllDevices ? 'devices' : 'fitness devices';
+      deviceList.innerHTML = `<div class="no-devices">No ${deviceType} found. Click "Scan for Devices" to search for equipment.</div>`;
+    }
+  } catch (error) {
+    console.error('Failed to set show all devices:', error);
+    // Revert the toggle on error
+    target.checked = !showAllDevices;
+    showAllDevices = !showAllDevices;
   }
 }
 
