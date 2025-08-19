@@ -472,11 +472,6 @@ window.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.send('set-ignore-mouse-events', true);
   };
   
-  toggleBtn?.addEventListener('mouseenter', enableMouseEvents);
-  devicePanel?.addEventListener('mouseenter', enableMouseEvents);
-  
-  const timerContainer = document.querySelector('.time-container');
-  timerContainer?.addEventListener('mouseenter', enableMouseEvents);
   
   document.getElementById('scanDevicesBtn')?.addEventListener('click', scanForDevices);
   document.getElementById('refreshDevicesBtn')?.addEventListener('click', loadDeviceList);
@@ -490,9 +485,6 @@ window.addEventListener('DOMContentLoaded', () => {
     e.stopPropagation();
     toggleHrZonePanel();
   });
-  
-  hrZoneToggleBtn?.addEventListener('mouseenter', enableMouseEvents);
-  hrZonePanel?.addEventListener('mouseenter', enableMouseEvents);
   
   // HR Zone configuration buttons
   document.getElementById('calculateZones')?.addEventListener('click', () => {
@@ -548,7 +540,6 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initialize displays
   updateTimerDisplay();
   loadHrConfig();
-  
 });
 
 window.addEventListener('beforeunload', stopMetricsUpdates);
