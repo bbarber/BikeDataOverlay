@@ -2,12 +2,11 @@
   "name": "bike-data-overlay",
   "version": "1.0.0",
   "description": "Cycling statistics overlay application",
-  "main": "dist/src/main.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "electron dist/src/main.js --dev",
-    "start": "electron dist/src/main.js",
-    "watch": "tsc --watch",
+   "build": "tsc",
+    "watch": "tsc -w",
+    "lint": "eslint -c .eslintrc --ext .ts ./src",
+    "start": "npm run build && electron ./dist/main.js",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
   },
@@ -15,7 +14,7 @@
     "@playwright/test": "^1.54.2",
     "@types/node": "^20.10.0",
     "chokidar": "^4.0.3",
-    "electron": "^28.0.0",
+    "electron": "^28.1.0",
     "electron-reload": "^2.0.0-alpha.1",
     "playwright": "^1.54.2",
     "typescript": "^5.3.3"
