@@ -1,10 +1,22 @@
 const axios = require('axios');
+let ipcRenderer = null;
+try { ipcRenderer = require('electron').ipcRenderer; } catch {}
+
+// Initialize Bluetooth service
+let bluetoothService;
+let currentMetrics = {
+    watts: 0,
+    heartRate: 0
+};
 
 // Initialize Lucide icons when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+    
+    // Initialize Bluetooth service
+    initializeBluetooth();
 });
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -27,8 +39,107 @@ let hrConfig = {
 };
 let hrZones = {};
 
+// Initialize Bluetooth service
+function initializeBluetooth() {
+    try {
+        if (ipcRenderer) {
+			// Electron IPC BLE path
+			console.log('Initializing IPC BLE');
+			ipcRenderer.invoke('ble:init').catch(() => {});
+			// Listen for devices and data
+			ipcRenderer.on('ble:device', (_e, device) => {
+				appendOrUpdateDevice(device);
+			});
+			ipcRenderer.on('ble:scan-started', () => {
+				setStatus('Scanning for Bluetooth devices...');
+			});
+			ipcRenderer.on('ble:scan-stopped', (_e, devices) => {
+				setStatus(`Found ${devices.length} device(s)`);
+				displayDevices(devices);
+			});
+			ipcRenderer.on('ble:connected', (_e, device) => {
+				handleDeviceConnected(device);
+			});
+			ipcRenderer.on('ble:disconnected', (_e, device) => {
+				handleDeviceDisconnected(device);
+			});
+			ipcRenderer.on('ble:data', (_e, payload) => {
+				handleBluetoothData(payload);
+			});
+			console.log('IPC BLE initialized');
+		} else {
+			// Fallback: Web Bluetooth
+			bluetoothService = new BluetoothService();
+			bluetoothService.setDataCallback(handleBluetoothData);
+			bluetoothService.setDeviceConnectedCallback(handleDeviceConnected);
+			bluetoothService.setDeviceDisconnectedCallback(handleDeviceDisconnected);
+			console.log('Web Bluetooth service initialized');
+			if (!bluetoothService.isSupported()) {
+				console.warn('Web Bluetooth API not supported');
+				document.querySelector('.status-text').textContent = 'Bluetooth not supported in this browser';
+			}
+		}
+    } catch (error) {
+        console.error('Failed to initialize Bluetooth service:', error);
+    }
+}
+
+// Handle Bluetooth data received
+function handleBluetoothData(data) {
+    console.log('Bluetooth data received:', data);
+    
+    switch (data.type) {
+        case 'power':
+            currentMetrics.watts = data.value;
+            updatePowerDisplay(data.value);
+            break;
+        case 'heartRate':
+            currentMetrics.heartRate = data.value;
+            updateHeartRateDisplay(data.value);
+            break;
+    }
+}
+
+// Handle device connected
+function handleDeviceConnected(device) {
+    console.log('Device connected:', device);
+    document.querySelector('.status-text').textContent = `Connected to ${device.name}`;
+    
+    // Start real-time updates
+    startRealTimeUpdates();
+}
+
+// Handle device disconnected
+function handleDeviceDisconnected(device) {
+    console.log('Device disconnected:', device);
+    document.querySelector('.status-text').textContent = `${device.name} disconnected`;
+    
+    // Stop real-time updates
+    stopRealTimeUpdates();
+}
+
+// Update power display
+function updatePowerDisplay(watts) {
+    const wattsElement = document.getElementById('watts');
+    if (wattsElement) {
+        wattsElement.textContent = Math.round(watts);
+    }
+}
+
+// Start real-time updates from Bluetooth
+function startRealTimeUpdates() {
+    // No need for polling when using Bluetooth - data comes in real-time
+    console.log('Started real-time Bluetooth updates');
+}
+
+// Stop real-time updates
+function stopRealTimeUpdates() {
+    console.log('Stopped real-time Bluetooth updates');
+}
 
 async function fetchMetrics() {
+    // This function is now deprecated in favor of Bluetooth real-time updates
+    // Keep for fallback if needed
     try {
         const response = await axios.get(`${API_BASE_URL}/metrics/current`);
         const metrics = response.data;
@@ -50,9 +161,15 @@ function startMetricsUpdates() {
     // Stop any existing polling to prevent multiple intervals
     stopMetricsUpdates();
     
-    fetchMetrics();
-    updateInterval = setInterval(fetchMetrics, 1000);
-    console.log('Started metrics polling');
+    // If we have Bluetooth devices connected, use real-time updates
+    if (bluetoothService && bluetoothService.getConnectedDevices().length > 0) {
+        startRealTimeUpdates();
+    } else {
+        // Fallback to API polling
+        fetchMetrics();
+        updateInterval = setInterval(fetchMetrics, 1000);
+        console.log('Started metrics polling (fallback)');
+    }
 }
 
 function stopMetricsUpdates() {
@@ -61,6 +178,7 @@ function stopMetricsUpdates() {
         updateInterval = null;
         console.log('Stopped metrics polling');
     }
+    stopRealTimeUpdates();
 }
 
 async function scanForDevices() {
@@ -75,24 +193,41 @@ async function scanForDevices() {
         scanBtn.disabled = true;
         scanBtn.textContent = 'Scanning...';
         
-        const response = await axios.get(`${API_BASE_URL}/metrics/devices/list`);
-        const data = response.data;
-        
-        if (data.success || data.Success) {
-            statusEl.textContent = data.message || data.Message;
-            displayDevices(data.devices || data.Devices || []);
-        } else {
-            statusEl.textContent = `Scan failed: ${data.message || data.Message}`;
-            displayDevices([]);
-        }
-        
+        if (ipcRenderer) {
+			const devices = await ipcRenderer.invoke('ble:startScan');
+			if (devices && devices.length > 0) {
+				statusEl.textContent = `Found ${devices.length} device(s)`;
+				displayDevices(devices);
+			} else {
+				statusEl.textContent = 'No devices found';
+				displayDevices([]);
+			}
+		} else {
+			if (!bluetoothService) throw new Error('Bluetooth service not initialized');
+			if (!bluetoothService.isSupported()) throw new Error('Web Bluetooth API not supported in this browser');
+			const devices = await bluetoothService.scanForDevices();
+			if (devices && devices.length > 0) {
+				statusEl.textContent = `Found ${devices.length} device(s)`;
+				displayDevices(devices);
+			} else {
+				statusEl.textContent = 'No devices found or scan cancelled';
+				displayDevices([]);
+			}
+		}
     } catch (error) {
         console.error('Failed to scan for devices:', error);
-        if (error.response && error.response.data && error.response.data.message) {
-            statusEl.textContent = `Scan error: ${error.response.data.message}`;
+        
+        // Handle specific error cases more gracefully
+        if (error.message.includes('user cancelled') || error.message.includes('No device selected')) {
+            statusEl.textContent = 'Scan cancelled - no device selected';
+        } else if (error.message.includes('Permission denied')) {
+            statusEl.textContent = 'Bluetooth permission denied - please allow access';
+        } else if (error.message.includes('not supported')) {
+            statusEl.textContent = 'Bluetooth not supported on this device';
         } else {
             statusEl.textContent = `Scan error: ${error.message}`;
         }
+        
         displayDevices([]);
     } finally {
         isScanning = false;
@@ -106,27 +241,19 @@ async function loadDeviceList() {
     
     try {
         statusEl.textContent = 'Loading device list...';
-        
-        const response = await axios.get(`${API_BASE_URL}/metrics/devices/list`);
-        const data = response.data;
-        
-        if (data.success || data.Success) {
-            statusEl.textContent = data.message || data.Message;
-            displayDevices(data.devices || data.Devices || []);
-        } else {
-            statusEl.textContent = data.message || data.Message;
-            displayDevices([]);
+        let devices = [];
+        if (ipcRenderer) {
+            devices = await ipcRenderer.invoke('ble:getDevices');
+        } else if (bluetoothService) {
+            devices = bluetoothService.getDevices();
         }
+        statusEl.textContent = `Found ${devices.length} device(s)`;
+        displayDevices(devices);
         
     } catch (error) {
         console.error('Failed to load device list:', error);
-        if (error.response && error.response.status === 400) {
-            statusEl.textContent = 'Bluetooth scan error - try refreshing';
-        } else {
-            statusEl.textContent = 'Backend not available - click "Scan for Devices" when ready';
-        }
+        statusEl.textContent = 'Failed to load devices';
         displayDevices([]);
-        // Don't re-throw the error so the panel stays visible
     }
 }
 
@@ -139,33 +266,30 @@ function displayDevices(devices) {
     }
     
     deviceList.innerHTML = devices.map(device => {
-        const isConnected = device.isConnected || device.IsConnected;
-        const canConnect = device.canConnect !== undefined ? device.canConnect : device.CanConnect;
+        const isConnected = device.isConnected;
+        const canConnect = device.canConnect;
         const statusClass = isConnected ? 'connected' : 'available';
         const connectBtnText = isConnected ? 'Connected' : 'Connect';
         const connectBtnDisabled = isConnected || !canConnect;
         
-        const deviceName = device.name || device.Name;
-        const deviceType = device.type || device.Type;
-        const deviceStatus = device.status || device.Status;
-        const deviceId = device.id || device.Id;
-        const deviceInfo = device.deviceInfo || device.DeviceInfo;
-        
         return `
             <div class="device-item">
-                <div class="device-name">${deviceName}</div>
+                <div class="device-name">${device.name}</div>
                 <div class="device-info">
-                    <span class="device-type">${deviceType}</span>
-                    <span class="device-status-badge ${statusClass}">${deviceStatus}</span>
+                    <span class="device-type">${device.type}</span>
+                    <span class="device-status-badge ${statusClass}">${device.status}</span>
                 </div>
                 <div class="device-details">
-                    ${deviceInfo.manufacturer || deviceInfo.Manufacturer || 'Unknown'} ${deviceInfo.model || deviceInfo.Model || 'Unknown'} (${deviceInfo.type || deviceInfo.Type || 'Unknown'})
+                    ${device.deviceInfo.manufacturer} ${device.deviceInfo.model} (${device.deviceInfo.type})
                 </div>
                 <div class="device-actions">
-                    <button class="btn-connect" ${connectBtnDisabled ? 'disabled' : ''} 
-                            onclick="connectToDevice('${deviceId}')">
-                        ${connectBtnText}
-                    </button>
+                    ${isConnected ? 
+                        `<button class="btn-connect" onclick="disconnectDevice('${device.id}')">Disconnect</button>` :
+                        `<button class="btn-connect" ${connectBtnDisabled ? 'disabled' : ''} 
+                                onclick="connectToDevice('${device.id}')">
+                            ${connectBtnText}
+                        </button>`
+                    }
                 </div>
             </div>
         `;
@@ -178,23 +302,42 @@ async function connectToDevice(deviceId) {
     try {
         statusEl.textContent = `Connecting to device...`;
         
-        const response = await axios.post(`${API_BASE_URL}/metrics/connection/connect/${deviceId}`);
-        const data = response.data;
-        
-        if (data.success || data.Success) {
-            const deviceCount = data.connectedDevices || 1;
-            statusEl.textContent = `Connected! Total devices: ${deviceCount}`;
-            loadDeviceList(); // Refresh the device list
-            
-            // Start metrics polling when successfully connected
-            startMetricsUpdates();
+        if (ipcRenderer) {
+            await ipcRenderer.invoke('ble:connect', deviceId);
         } else {
-            statusEl.textContent = `Connection failed: ${data.message || data.Message}`;
+            if (!bluetoothService) throw new Error('Bluetooth service not initialized');
+            await bluetoothService.connectToDevice(deviceId);
         }
+        
+        // The callbacks will handle the UI updates
+        statusEl.textContent = 'Device connected successfully!';
         
     } catch (error) {
         console.error('Failed to connect to device:', error);
         statusEl.textContent = `Connection error: ${error.message}`;
+    }
+}
+
+async function disconnectDevice(deviceId) {
+    const statusEl = document.querySelector('.status-text');
+    
+    try {
+        statusEl.textContent = `Disconnecting device...`;
+        
+        if (ipcRenderer) {
+            await ipcRenderer.invoke('ble:disconnect');
+        } else {
+            if (!bluetoothService) throw new Error('Bluetooth service not initialized');
+            await bluetoothService.disconnectDevice(deviceId);
+        }
+        
+        // Refresh device list
+        loadDeviceList();
+        statusEl.textContent = 'Device disconnected';
+        
+    } catch (error) {
+        console.error('Failed to disconnect device:', error);
+        statusEl.textContent = `Disconnect error: ${error.message}`;
     }
 }
 
@@ -478,66 +621,85 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     
     // Also enable mouse events when hovering over the device panel
-    devicePanel.addEventListener('mouseenter', () => {
-        if (typeof require !== 'undefined') {
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.send('set-ignore-mouse-events', false);
-            console.log('Device panel mouseenter - enabling mouse events');
-        }
-    });
+    if (devicePanel) {
+        devicePanel.addEventListener('mouseenter', () => {
+            if (typeof require !== 'undefined') {
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.send('set-ignore-mouse-events', false);
+                console.log('Device panel mouseenter - enabling mouse events');
+            }
+        });
+    }
     
     // Enable mouse events when hovering over the timer container
     const timerContainer = document.querySelector('.time-container');
-    timerContainer.addEventListener('mouseenter', () => {
-        if (typeof require !== 'undefined') {
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.send('set-ignore-mouse-events', false);
-            console.log('Timer container mouseenter - enabling mouse events');
-        }
-    });
+    if (timerContainer) {
+        timerContainer.addEventListener('mouseenter', () => {
+            if (typeof require !== 'undefined') {
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.send('set-ignore-mouse-events', false);
+                console.log('Timer container mouseenter - enabling mouse events');
+            }
+        });
+    }
     
-    document.getElementById('scanDevicesBtn').addEventListener('click', scanForDevices);
-    document.getElementById('refreshDevicesBtn').addEventListener('click', loadDeviceList);
+    // Add event listeners for device management buttons
+    const scanDevicesBtn = document.getElementById('scanDevicesBtn');
+    const refreshDevicesBtn = document.getElementById('refreshDevicesBtn');
+    
+    if (scanDevicesBtn) {
+        scanDevicesBtn.addEventListener('click', scanForDevices);
+    }
+    if (refreshDevicesBtn) {
+        refreshDevicesBtn.addEventListener('click', loadDeviceList);
+    }
     
     // HR Zone panel event listeners
     const hrZoneToggleBtn = document.getElementById('toggleHrZonePanel');
     const hrZonePanel = document.getElementById('hrZonePanel');
     
-    hrZoneToggleBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleHrZonePanel();
-    });
+    if (hrZoneToggleBtn) {
+        hrZoneToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleHrZonePanel();
+        });
+        
+        // Enable mouse events for HR zone panel
+        hrZoneToggleBtn.addEventListener('mouseenter', () => {
+            if (typeof require !== 'undefined') {
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.send('set-ignore-mouse-events', false);
+            }
+        });
+    }
     
-    // Enable mouse events for HR zone panel
-    hrZoneToggleBtn.addEventListener('mouseenter', () => {
-        if (typeof require !== 'undefined') {
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.send('set-ignore-mouse-events', false);
-        }
-    });
-    
-    hrZonePanel.addEventListener('mouseenter', () => {
-        if (typeof require !== 'undefined') {
-            const { ipcRenderer } = require('electron');
-            ipcRenderer.send('set-ignore-mouse-events', false);
-        }
-    });
+    if (hrZonePanel) {
+        hrZonePanel.addEventListener('mouseenter', () => {
+            if (typeof require !== 'undefined') {
+                const { ipcRenderer } = require('electron');
+                ipcRenderer.send('set-ignore-mouse-events', false);
+            }
+        });
+    }
     
     // HR Zone configuration buttons
-    document.getElementById('calculateZones').addEventListener('click', () => {
-        hrConfig.age = parseInt(document.getElementById('userAge').value);
-        hrConfig.restingHR = parseInt(document.getElementById('restingHR').value);
-        
-        // Get selected target zone
-        const selectedZone = document.querySelector('input[name="targetZone"]:checked');
-        if (selectedZone) {
-            hrConfig.targetZone = parseInt(selectedZone.value);
-        }
-        
-        updateHrZones();
-        saveHrConfig();
-    });
+    const calculateZonesBtn = document.getElementById('calculateZones');
+    if (calculateZonesBtn) {
+        calculateZonesBtn.addEventListener('click', () => {
+            hrConfig.age = parseInt(document.getElementById('userAge').value);
+            hrConfig.restingHR = parseInt(document.getElementById('restingHR').value);
+            
+            // Get selected target zone
+            const selectedZone = document.querySelector('input[name="targetZone"]:checked');
+            if (selectedZone) {
+                hrConfig.targetZone = parseInt(selectedZone.value);
+            }
+            
+            updateHrZones();
+            saveHrConfig();
+        });
+    }
     
     // Add event listeners for zone selection
     document.querySelectorAll('input[name="targetZone"]').forEach(radio => {
@@ -550,23 +712,29 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     
     // Auto-update zones when age or resting HR changes
-    document.getElementById('userAge').addEventListener('input', (e) => {
-        const age = parseInt(e.target.value);
-        if (age && age >= 18 && age <= 100) {
-            hrConfig.age = age;
-            updateHrZones();
-            saveHrConfig();
-        }
-    });
+    const userAgeInput = document.getElementById('userAge');
+    if (userAgeInput) {
+        userAgeInput.addEventListener('input', (e) => {
+            const age = parseInt(e.target.value);
+            if (age && age >= 18 && age <= 100) {
+                hrConfig.age = age;
+                updateHrZones();
+                saveHrConfig();
+            }
+        });
+    }
     
-    document.getElementById('restingHR').addEventListener('input', (e) => {
-        const restingHR = parseInt(e.target.value);
-        if (restingHR && restingHR >= 40 && restingHR <= 100) {
-            hrConfig.restingHR = restingHR;
-            updateHrZones();
-            saveHrConfig();
-        }
-    });
+    const restingHRInput = document.getElementById('restingHR');
+    if (restingHRInput) {
+        restingHRInput.addEventListener('input', (e) => {
+            const restingHR = parseInt(e.target.value);
+            if (restingHR && restingHR >= 40 && restingHR <= 100) {
+                hrConfig.restingHR = restingHR;
+                updateHrZones();
+                saveHrConfig();
+            }
+        });
+    }
     
     
     // Timer button event listeners (now handled by inline onclick attributes)
@@ -577,3 +745,16 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addEventListener('beforeunload', stopMetricsUpdates);
+
+// Helpers for IPC device updates
+function setStatus(text) {
+	const statusEl = document.querySelector('.status-text');
+	if (statusEl) statusEl.textContent = text;
+}
+
+function appendOrUpdateDevice(device) {
+	const existing = window.__bleDevices || new Map();
+	window.__bleDevices = existing;
+	existing.set(device.id, device);
+	displayDevices(Array.from(existing.values()));
+}

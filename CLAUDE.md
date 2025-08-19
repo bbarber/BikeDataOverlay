@@ -2,11 +2,11 @@
 
 ## CORE PRINCIPLES
 
-1. **Build Often**: `dotnet build backend/BikeDataApi.csproj`
-2. **Test Manually**: Use curl commands to verify API outputs
+1. **Build Often**: Test the Electron app frequently
+2. **Test Manually**: Use the app to verify BLE connectivity
 3. **Track Progress**: Update todos throughout development
 4. **Clean Commits**: Only commit working code, always push
-5. **Never Mock**: Use real implementations for testing
+5. **Real BLE**: Use actual heart rate monitors for testing
 
 ## WORKFLOW
 
@@ -18,24 +18,22 @@
 ## PROJECT COMMANDS
 
 ```bash
-# Backend
-dotnet build backend/BikeDataApi.csproj
-dotnet run --project backend/BikeDataApi.csproj
-
 # Frontend  
+cd frontend && npm install
+cd frontend && npm start
 cd frontend && npm run dev
-cd frontend && npm run test
+
+# Testing
+cd frontend && npm test
+cd frontend && npm run test:ui
 
 # Individual Playwright Tests
 npx playwright test tests/filename.spec.js -g "test name" --reporter=line
-
-# API Testing
-curl http://localhost:5000/api/[endpoint]
 ```
 
 ## ARCHITECTURE
 
-- **Backend**: .NET 8 Web API for Bluetooth communication
-- **Frontend**: Electron app for overlay UI
-- **Testing**: Playwright for frontend, manual curl for API
+- **Frontend**: Electron app with native BLE support via noble
+- **BLE Service**: Main process BLE handling with IPC communication
+- **Testing**: Playwright for frontend, manual BLE device testing
 

@@ -1,6 +1,10 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const chokidar = require('chokidar');
+const BleService = require('./ble-service');
+
+// BLE service instance
+const ble = new BleService();
 
 let overlayWindow;
 
@@ -18,11 +22,57 @@ function createOverlayWindow() {
         skipTaskbar: true,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            webSecurity: false,
+            // Enable Web Bluetooth API
+            enableBluetooth: true,
+            // Allow permissions for Bluetooth
+            permissions: ['bluetooth']
+        }
+    });
+
+    // Set Bluetooth permissions
+    overlayWindow.webContents.session.setPermissionRequestHandler((webContents, permission, callback) => {
+        if (permission === 'bluetooth') {
+            callback(true); // Allow Bluetooth permissions
+        } else {
+            callback(false);
         }
     });
 
     overlayWindow.loadFile('index.html');
+
+    // Forward BLE events to renderer
+    ble.on('device', (device) => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('ble:device', device);
+        }
+    });
+    ble.on('scan-started', () => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('ble:scan-started');
+        }
+    });
+    ble.on('scan-stopped', (devices) => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('ble:scan-stopped', devices);
+        }
+    });
+    ble.on('connected', (device) => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('ble:connected', device);
+        }
+    });
+    ble.on('disconnected', (device) => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('ble:disconnected', device);
+        }
+    });
+    ble.on('data', (payload) => {
+        if (overlayWindow && !overlayWindow.isDestroyed()) {
+            overlayWindow.webContents.send('ble:data', payload);
+        }
+    });
     
     // Set up selective mouse event ignoring
     overlayWindow.webContents.once('dom-ready', () => {
@@ -107,6 +157,31 @@ ipcMain.on('set-ignore-mouse-events', (event, ignore) => {
     }
 });
 
+// IPC: BLE control
+ipcMain.handle('ble:init', async () => {
+    return await ble.init();
+});
+ipcMain.handle('ble:startScan', async () => {
+    await ble.init();
+    await ble.startScan();
+    return ble.getDevices();
+});
+ipcMain.handle('ble:stopScan', async () => {
+    await ble.stopScan();
+    return ble.getDevices();
+});
+ipcMain.handle('ble:getDevices', async () => {
+    return ble.getDevices();
+});
+ipcMain.handle('ble:connect', async (event, id) => {
+    await ble.connectToDevice(id);
+    return true;
+});
+ipcMain.handle('ble:disconnect', async () => {
+    await ble.disconnectDevice();
+    return true;
+});
+
 app.whenReady().then(createOverlayWindow);
 
 app.on('window-all-closed', () => {
@@ -150,3 +225,9 @@ if (process.platform === 'win32') {
     // Check every 2 seconds
     setInterval(checkParent, 2000);
 }
+
+app.on('before-quit', () => {
+    try { ble.stopScan(); } catch {}
+    try { ble.disconnectDevice(); } catch {}
+    ble.cleanup();
+});
