@@ -25,10 +25,19 @@ cd frontend && npm run dev
 
 # Testing
 cd frontend && npm test
-cd frontend && npm run test:ui
 
 # Individual Playwright Tests
-npx playwright test tests/filename.spec.js -g "test name" --reporter=line
+# Run specific test file
+npx playwright test tests/filename.spec.js
+
+# Run specific test by name
+npx playwright test -g "test name"
+
+# Run tests with specific reporter
+npx playwright test --reporter=line
+
+# List all available tests
+npx playwright test --list
 ```
 
 ## ARCHITECTURE
