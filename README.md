@@ -1,6 +1,6 @@
 # Bike Data Overlay
 
-A cycling statistics overlay application built with Electron, featuring real-time Bluetooth Low Energy (BLE) connectivity for heart rate monitors and cycling power meters.
+A cycling statistics overlay application built with Electron and TypeScript, featuring real-time Bluetooth Low Energy (BLE) connectivity for heart rate monitors and cycling power meters.
 
 ## Features
 
@@ -13,15 +13,10 @@ A cycling statistics overlay application built with Electron, featuring real-tim
 ## Quick Start
 
 ```bash
-cd frontend
+cd app
 npm install
 npm start
 ```
-
-This will:
-1. Install frontend dependencies (including BLE support)
-2. Launch the Electron overlay window
-3. Enable Bluetooth device scanning and connection
 
 ## Usage
 
@@ -43,7 +38,7 @@ This will:
 
 ## Architecture
 
-- **Frontend**: Electron with native BLE support via `@abandonware/noble`
+- **Frontend**: Electron with native BLE support via `@stoprocent/noble`
 - **BLE Service**: Main process BLE handling with IPC communication
 - **UI**: Transparent overlay with device management panels
 - **Data Flow**: BLE → Main Process → IPC → Renderer → Display
@@ -57,24 +52,29 @@ This will:
 ## Development
 
 ```bash
+cd app
+
 # Start with dev tools and live reload
-npm run dev
+npm start
 
 # Run tests
 npm test
-npm run test:ui
+
+# Package for distribution
+npm run package
+npm run make
 ```
 
 ## Dependencies
 
-- **Electron**: Desktop app framework
-- **@abandonware/noble**: Native BLE support
+- **Electron**: Desktop app framework (v37.3.1)
+- **@stoprocent/noble**: Native BLE support
+- **Vite**: Build tool and dev server
+- **Electron Forge**: Packaging and distribution
 - **Playwright**: Testing framework
-- **Lucide**: Icon library
+- **ESLint**: Code linting
 
-## Next Steps
+## Testing
 
-- Add cadence and speed metrics
-- Implement overlay positioning controls
-- Add data logging and export
-- Support for multiple simultaneous devices
+The project includes comprehensive Playwright tests for UI functionality. Tests are located in the `app/tests/` directory.
+
