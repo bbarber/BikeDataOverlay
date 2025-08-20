@@ -1,2 +1,2 @@
-Fix live reload in electron app.
-Fix playwrite tests.
+Update default electron icon
+Update exe name
