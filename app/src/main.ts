@@ -80,15 +80,6 @@ function initializeBluetoothService(): void {
     }
   });
 
-  // Auto-start connection in simulation mode after a brief delay
-  setTimeout(async () => {
-    try {
-      console.log('Auto-starting Bluetooth connection...');
-      await bluetoothService?.scanAndConnect();
-    } catch (error) {
-      console.error('Auto-connection failed:', error);
-    }
-  }, 2000);
 }
 
 // IPC Handlers for Bluetooth API

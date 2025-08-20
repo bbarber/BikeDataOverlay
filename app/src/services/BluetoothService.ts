@@ -345,8 +345,8 @@ export class BluetoothService extends EventEmitter {
       const devices = await this.scanForDevices(10000);
       
       if (devices.length === 0) {
-        console.log('No FTMS devices found. Starting simulation mode.');
-        return this.startSimulationMode();
+        console.log('No FTMS devices found.');
+        return false;
       }
 
       const device = devices[0];
@@ -357,57 +357,15 @@ export class BluetoothService extends EventEmitter {
         console.log(`Successfully connected to: ${device.name}`);
         return true;
       } else {
-        console.log('Failed to connect to device. Starting simulation mode.');
-        return this.startSimulationMode();
+        console.log('Failed to connect to device.');
+        return false;
       }
     } catch (error: any) {
       console.error('Real connection failed:', error.message);
-      console.log('Starting simulation mode.');
-      return this.startSimulationMode();
+      return false;
     }
   }
 
-  private startSimulationMode(): boolean {
-    console.log('Starting FTMS simulation mode...');
-    
-    this.connectedDeviceName = 'Simulated KICKR CORE';
-    this.isConnected = true;
-    this.updateConnectionStatus();
-    
-    this.simulationInterval = setInterval(() => {
-      const now = Date.now();
-      const elapsedSeconds = Math.floor(now / 1000) % 3600;
-      
-      const workoutIntensity = 0.7 + 0.3 * Math.sin(elapsedSeconds / 30.0);
-      const basePower = 180 + Math.floor(50 * workoutIntensity);
-      const baseCadence = 85 + Math.floor(15 * workoutIntensity);
-      const baseSpeed = 28.0 + (8.0 * workoutIntensity);
-      
-      const powerVariation = Math.floor(Math.sin(elapsedSeconds / 10.0) * 15);
-      const cadenceVariation = Math.floor(Math.cos(elapsedSeconds / 12.0) * 8);
-      const speedVariation = Math.sin(elapsedSeconds / 15.0) * 3.0;
-      
-      this.currentMetrics = {
-        watts: Math.max(0, basePower + powerVariation + Math.floor(Math.random() * 16 - 8)),
-        cadence: Math.max(0, baseCadence + cadenceVariation + Math.floor(Math.random() * 6 - 3)),
-        speed: Math.max(0, baseSpeed + speedVariation + (Math.random() * 2 - 1)),
-        heartRate: 135 + Math.floor(25 * workoutIntensity) + Math.floor(Math.random() * 13 - 5),
-        timestamp: new Date().toISOString()
-      };
-      
-      this.emit('metricsUpdate', this.currentMetrics);
-      
-      if (elapsedSeconds % 10 === 0) {
-        console.log(`Simulation Data - Power: ${this.currentMetrics.watts}W, ` +
-                   `Cadence: ${this.currentMetrics.cadence}RPM, ` +
-                   `Speed: ${this.currentMetrics.speed.toFixed(1)}km/h, ` +
-                   `HR: ${this.currentMetrics.heartRate}BPM`);
-      }
-    }, 1000);
-    
-    console.log('Successfully started simulation mode');
-    return true;
-  }
 
   async disconnect(): Promise<void> {
     try {
