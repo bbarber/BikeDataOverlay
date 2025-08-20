@@ -43,7 +43,9 @@
       "Bash(tsc)",
       "Bash(npx tsc:*)",
       "Bash(npm start:*)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(vs_installer.exe modify:*)"
     ],
     "deny": [],
     "ask": [],

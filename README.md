@@ -10,6 +10,10 @@ A cycling statistics overlay application built with Electron and TypeScript, fea
 - **Always-on-top positioning** with smart mouse event handling
 - **Cross-platform support** (macOS, Linux, Windows)
 
+## Prerequisites
+
+**Windows**: Install Visual Studio Build Tools with "Desktop development with C++" workload for native BLE module compilation.
+
 ## Quick Start
 
 ```bash
