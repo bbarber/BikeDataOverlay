@@ -2,6 +2,9 @@
 
 A cycling statistics overlay application built with Electron and TypeScript, featuring real-time Bluetooth Low Energy (BLE) connectivity for heart rate monitors and cycling power meters.
 
+<img width="1239" height="1210" alt="image" src="https://github.com/user-attachments/assets/30fb6f33-bafe-43a5-97d4-75480bddf746" />
+
+
 ## Features
 
 - **Real-time BLE connectivity** for heart rate monitors and cycling power meters
