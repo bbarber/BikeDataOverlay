@@ -953,13 +953,11 @@ function initializeHrChart(): void {
       scales: {
         x: {
           title: {
-            display: true,
-            text: 'Time',
-            color: 'rgba(255, 255, 255, 0.8)'
+            display: false
           },
           ticks: {
-            color: 'rgba(255, 255, 255, 0.6)',
-            maxTicksLimit: 8
+            display: false,
+            maxTicksLimit: 6
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)'
@@ -976,9 +974,7 @@ function initializeHrChart(): void {
           },
           grid: {
             color: 'rgba(255, 255, 255, 0.1)'
-          },
-          min: 60,
-          max: 200
+          }
         }
       },
       plugins: {
