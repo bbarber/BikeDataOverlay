@@ -113,7 +113,15 @@ export class BluetoothService extends EventEmitter {
       const hasFTMSService = peripheral.advertisement.serviceUuids.includes('1826');
       const hasCyclingSpeedCadenceService = peripheral.advertisement.serviceUuids.includes('1816');
       
-      if (hasHeartRateService || hasCyclingPowerService || hasFTMSService || hasCyclingSpeedCadenceService) {
+      // Also check for known fitness device names (some don't advertise services initially)
+      const isKnownFitnessDevice = deviceName.toLowerCase().includes('coospo') || 
+                                   deviceName.toLowerCase().includes('wahoo') || 
+                                   deviceName.toLowerCase().includes('polar') || 
+                                   deviceName.toLowerCase().includes('garmin') ||
+                                   deviceName.toLowerCase().includes('heartrate') ||
+                                   deviceName.toLowerCase().includes('hr');
+      
+      if (hasHeartRateService || hasCyclingPowerService || hasFTMSService || hasCyclingSpeedCadenceService || isKnownFitnessDevice) {
         console.log(`Discovered fitness device: ${deviceName} (${peripheral.id})`);
         console.log(`  Services: ${peripheral.advertisement.serviceUuids.join(', ')}`);
         
@@ -262,8 +270,11 @@ export class BluetoothService extends EventEmitter {
           const heartRateService = services.find(service => service.uuid === '180d');
           const speedCadenceService = services.find(service => service.uuid === '1816');
           
-          if (powerService || heartRateService || speedCadenceService) {
-            console.log(`Found fitness services on ${device.name}, setting up basic monitoring`);
+          if (heartRateService) {
+            console.log(`Found Heart Rate service on ${device.name}`);
+            this.setupHeartRateService(device, heartRateService).then(resolve).catch(reject);
+          } else if (powerService || speedCadenceService) {
+            console.log(`Found other fitness services on ${device.name}, setting up basic monitoring`);
             resolve();
           } else {
             console.log(`No recognized fitness services found on ${device.name}`);
@@ -318,6 +329,82 @@ export class BluetoothService extends EventEmitter {
         }
       });
     });
+  }
+
+  private async setupHeartRateService(device: DiscoveredDevice, heartRateService: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      heartRateService.discoverCharacteristics([], (error: any, characteristics: any[]) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        console.log(`Found ${characteristics.length} Heart Rate characteristics for ${device.name}`);
+        
+        const heartRateMeasurementChar = characteristics.find(char => 
+          char.uuid === '2a37' || char.uuid.toLowerCase().includes('2a37')
+        );
+
+        if (heartRateMeasurementChar && heartRateMeasurementChar.properties.includes('notify')) {
+          console.log(`Setting up Heart Rate Measurement notifications for ${device.name}`);
+          
+          heartRateMeasurementChar.on('data', (data: Buffer) => {
+            const heartRate = this.parseHeartRateData(data);
+            if (heartRate > 0) {
+              this.currentMetrics = {
+                ...this.currentMetrics,
+                heartRate: heartRate,
+                timestamp: new Date().toISOString()
+              };
+              this.emit('metricsUpdate', this.currentMetrics);
+              console.log(`Heart Rate from ${device.name}: ${heartRate} bpm`);
+            }
+          });
+
+          heartRateMeasurementChar.subscribe((subscribeError: any) => {
+            if (subscribeError) {
+              console.error(`Failed to subscribe to Heart Rate notifications:`, subscribeError);
+              reject(subscribeError);
+            } else {
+              console.log(`Successfully subscribed to Heart Rate notifications for ${device.name}`);
+              resolve();
+            }
+          });
+        } else {
+          console.log(`Heart Rate Measurement characteristic not found or not notifiable on ${device.name}`);
+          resolve();
+        }
+      });
+    });
+  }
+
+  private parseHeartRateData(data: Buffer): number {
+    if (data.length < 2) {
+      return 0;
+    }
+
+    // Heart Rate Measurement characteristic format (Bluetooth spec)
+    // Byte 0: Flags
+    // - Bit 0: 0 = uint8, 1 = uint16 for heart rate value
+    // - Bit 1-2: Sensor Contact Status
+    // - Bit 3: Energy Expended Status
+    // - Bit 4: RR-Interval Status
+    // - Bit 5-7: Reserved
+    
+    const flags = data.readUInt8(0);
+    const is16Bit = (flags & 0x01) !== 0;
+    
+    let heartRate: number;
+    if (is16Bit) {
+      // 16-bit heart rate value (little-endian)
+      heartRate = data.readUInt16LE(1);
+    } else {
+      // 8-bit heart rate value
+      heartRate = data.readUInt8(1);
+    }
+    
+    console.log(`Parsed heart rate: ${heartRate} bpm (16-bit: ${is16Bit}, flags: 0x${flags.toString(16)})`);
+    return heartRate;
   }
 
   private updateConnectionStatus(): void {

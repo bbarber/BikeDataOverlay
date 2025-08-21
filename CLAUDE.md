@@ -2,7 +2,7 @@
 
 ## CORE PRINCIPLES
 
-1. **Build Often**: Test the Electron app frequently with `npm run build`
+1. **Build Often**: Test the Electron app frequently with `npm run package`
 2. **Test Manually**: Use the app to verify BLE connectivity and UI functionality
 3. **Track Progress**: Update todos throughout development
 4. **Clean Commits**: Only commit working code, always push
