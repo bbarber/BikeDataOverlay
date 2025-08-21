@@ -14,6 +14,7 @@
 
 import './index.css';
 import { CyclingMetrics, ScanResult, ConnectionResult } from './types/CyclingMetrics';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 let updateInterval: NodeJS.Timeout | null = null;
 let devicePanelVisible = false;
@@ -50,7 +51,20 @@ let zoneTimes = {
 };
 let zoneTrackingInterval: NodeJS.Timeout | null = null;
 
+// HR Chart variables
+interface HRDataPoint {
+  timestamp: number;
+  heartRate: number;
+  zone: number;
+}
+let hrDataPoints: HRDataPoint[] = [];
+let hrChart: Chart | null = null;
+const MAX_DATA_POINTS = 1000; // Limit to ~16 minutes of data
+
 console.log('👋 This message is being logged by "renderer.ts", included via Vite');
+
+// Register Chart.js components
+Chart.register(...registerables);
 
 // Wait for the DOM to be loaded and the API to be available
 document.addEventListener('DOMContentLoaded', () => {
@@ -82,9 +96,13 @@ function initializeApp(): void {
   loadHrConfig();
   loadShowAllDevicesState();
   loadTestModeState();
+  initializeHrChart();
   
   // Set up event listeners
   setupEventListeners();
+  
+  // Auto-start timer
+  startTimer();
 }
 
 function setupEventListeners(): void {
@@ -721,7 +739,6 @@ function closeAnalyticsPanel(): void {
 
 function updateAnalyticsDisplay(): void {
   const totalSessionTime = getTotalSessionTime();
-  updateAnalyticsSessionTime(totalSessionTime);
   updateHistogram(totalSessionTime);
   updateEmptyState(totalSessionTime);
 }
@@ -740,12 +757,6 @@ function getTotalSessionTime(): number {
   return baseTime;
 }
 
-function updateAnalyticsSessionTime(totalTime: number): void {
-  const sessionTimeEl = document.getElementById('analyticsSessionTime');
-  if (sessionTimeEl) {
-    sessionTimeEl.textContent = formatTime(totalTime);
-  }
-}
 
 function updateHistogram(totalTime: number): void {
   if (totalTime === 0) return;
@@ -825,6 +836,11 @@ function updateHeartRateDisplay(heartRate: number): void {
     
     // Update current zone for tracking
     updateCurrentZone(heartRate);
+    
+    // Add data point to chart if tracking is active
+    if (zoneTrackingStartTime && zone) {
+      addHrDataPoint(heartRate, zone.zone);
+    }
   } else {
     if (hrElement) hrElement.textContent = '--';
     if (zoneElement) zoneElement.textContent = 'Zone 1';
@@ -880,12 +896,159 @@ function resetTimer(): void {
   // Reset zone tracking
   resetZoneTracking();
   
+  // Reset HR chart
+  resetHrChart();
+  
   updateTimerDisplay();
   console.log('Timer reset');
+}
+
+// HR Chart Functions
+function initializeHrChart(): void {
+  const canvas = document.getElementById('hrLineChart') as HTMLCanvasElement;
+  if (!canvas) {
+    console.error('HR chart canvas not found');
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error('Unable to get canvas context');
+    return;
+  }
+
+  const config: ChartConfiguration = {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Heart Rate (BPM)',
+        data: [],
+        borderColor: '#00ff88',
+        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      backgroundColor: 'transparent',
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Time',
+            color: 'rgba(255, 255, 255, 0.8)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.6)',
+            maxTicksLimit: 8
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Heart Rate (BPM)',
+            color: 'rgba(255, 255, 255, 0.8)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.6)'
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          min: 60,
+          max: 200
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#00ff88',
+          bodyColor: 'white',
+          borderColor: '#00ff88',
+          borderWidth: 1,
+          callbacks: {
+            title: function(context) {
+              return `Time: ${context[0].label}`;
+            },
+            label: function(context) {
+              const dataPoint = hrDataPoints[context.dataIndex];
+              return [
+                `Heart Rate: ${context.parsed.y} BPM`,
+                `Zone: ${dataPoint?.zone || 'N/A'}`
+              ];
+            }
+          }
+        }
+      },
+      animation: {
+        duration: 0
+      }
+    }
+  };
+
+  hrChart = new Chart(ctx, config);
+  console.log('HR chart initialized');
+}
+
+function addHrDataPoint(heartRate: number, zone: number): void {
+  if (!zoneTrackingStartTime || heartRate <= 0) return;
+
+  const now = Date.now();
+  const sessionTime = now - zoneTrackingStartTime;
+  
+  const dataPoint: HRDataPoint = {
+    timestamp: sessionTime,
+    heartRate: heartRate,
+    zone: zone
+  };
+
+  hrDataPoints.push(dataPoint);
+
+  // Limit data points to prevent memory issues
+  if (hrDataPoints.length > MAX_DATA_POINTS) {
+    hrDataPoints.shift();
+  }
+
+  updateHrChart();
+}
+
+function updateHrChart(): void {
+  if (!hrChart || hrDataPoints.length === 0) return;
+
+  const labels = hrDataPoints.map(point => formatTime(point.timestamp));
+  const data = hrDataPoints.map(point => point.heartRate);
+
+  hrChart.data.labels = labels;
+  hrChart.data.datasets[0].data = data;
+  hrChart.update('none');
+}
+
+function resetHrChart(): void {
+  hrDataPoints = [];
+  if (hrChart) {
+    hrChart.data.labels = [];
+    hrChart.data.datasets[0].data = [];
+    hrChart.update('none');
+  }
 }
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
   stopMetricsUpdates();
   stopZoneTracking();
+  if (hrChart) {
+    hrChart.destroy();
+  }
 });

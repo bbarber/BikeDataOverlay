@@ -157,13 +157,6 @@
             </div>
             
             <div class="analytics-panel-content">
-                <div class="session-summary">
-                    <div class="session-time">
-                        <span class="label">Session Time:</span>
-                        <span class="value" id="analyticsSessionTime">00:00</span>
-                    </div>
-                </div>
-                
                 <div class="zone-histogram">
                     <h4>Time in Each Zone</h4>
                     <div class="histogram-container">
@@ -221,6 +214,13 @@
                                 <div class="zone-range" id="analyticsZone5Range">181-190 BPM</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                
+                <h4>Heart Rate Chart</h4>
+                <div class="hr-chart-section">
+                    <div class="chart-container">
+                        <canvas id="hrLineChart" width="450" height="150"></canvas>
                     </div>
                 </div>
                 
