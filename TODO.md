@@ -1,5 +1,6 @@
 - Update default electron icon
 - Update exe name
 - Fix issue where mouse can't click through transparent areas
+- Color code the hr line chart to match the histogram zone colors
 - Migrate hr zone settings to the settings pane (use tabs here?) One for devices, one for hr zones
 - Then heart rate stats can become the only window from hr stats window
