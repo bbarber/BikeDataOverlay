@@ -41,6 +41,7 @@ let hrZones: any = {};
 let analyticsVisible = false;
 let currentHrZone = 1;
 let lastZoneUpdateTime = 0;
+let hasValidHeartRate = false;
 let zoneTrackingStartTime: number | null = null;
 let zoneTimes = {
   zone1: 0,
@@ -671,6 +672,7 @@ function resetZoneTracking(): void {
   stopZoneTracking();
   zoneTrackingStartTime = null;
   lastZoneUpdateTime = 0;
+  hasValidHeartRate = false;
   zoneTimes = {
     zone1: 0,
     zone2: 0,
@@ -683,12 +685,12 @@ function resetZoneTracking(): void {
 }
 
 function updateZoneTracking(): void {
-  if (!zoneTrackingStartTime || !lastZoneUpdateTime) return;
+  if (!zoneTrackingStartTime || !lastZoneUpdateTime || !hasValidHeartRate) return;
   
   const now = Date.now();
   const timeInCurrentZone = now - lastZoneUpdateTime;
   
-  // Add time to current zone
+  // Add time to current zone only if we have valid heart rate data
   const zoneKey = `zone${currentHrZone}` as keyof typeof zoneTimes;
   zoneTimes[zoneKey] += timeInCurrentZone;
   
@@ -701,8 +703,12 @@ function updateZoneTracking(): void {
 }
 
 function updateCurrentZone(heartRate: number): void {
-  if (heartRate <= 0) return;
+  if (heartRate <= 0) {
+    hasValidHeartRate = false;
+    return;
+  }
   
+  hasValidHeartRate = true;
   const zone = getHrZone(heartRate);
   if (zone.zone !== currentHrZone) {
     // Update zone tracking if tracking is active
@@ -806,13 +812,20 @@ function updateAnalyticsZoneRanges(): void {
 function updateEmptyState(totalTime: number): void {
   const emptyState = document.getElementById('analyticsEmptyState');
   const histogram = document.querySelector('.zone-histogram') as HTMLElement;
+  const hrChartTitles = document.querySelectorAll('.analytics-panel-content h4');
+  const hrChartTitle = hrChartTitles[1] as HTMLElement; // Second h4 is "Heart Rate Chart"
+  const hrChartSection = document.querySelector('.hr-chart-section') as HTMLElement;
   
   if (totalTime === 0) {
     emptyState?.classList.remove('hidden');
     if (histogram) histogram.style.display = 'none';
+    if (hrChartTitle) hrChartTitle.style.display = 'none';
+    if (hrChartSection) hrChartSection.style.display = 'none';
   } else {
     emptyState?.classList.add('hidden');
     if (histogram) histogram.style.display = 'block';
+    if (hrChartTitle) hrChartTitle.style.display = 'block';
+    if (hrChartSection) hrChartSection.style.display = 'block';
   }
 }
 
