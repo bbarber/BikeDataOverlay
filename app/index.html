@@ -92,7 +92,12 @@
                 </div>
                 
                 <div class="hr-zone-display">
-                    <h4>Select Target Zone:</h4>
+                    <div class="zone-header">
+                        <h4>Select Target Zone:</h4>
+                        <button id="toggleAnalyticsPanel" class="btn-analytics">
+                            📊 Session Stats
+                        </button>
+                    </div>
                     <div class="zone-selector">
                         <div class="zone-option" data-zone="1">
                             <input type="radio" id="zone1" name="targetZone" value="1">
@@ -135,6 +140,89 @@
                             </label>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- HR Zone Analytics Panel -->
+        <div class="hr-analytics-panel" id="hrAnalyticsPanel">
+            <div class="analytics-panel-header">
+                <h3>HR Zone Analytics</h3>
+                <button id="closeAnalyticsPanel" class="close-btn">×</button>
+            </div>
+            
+            <div class="analytics-panel-content">
+                <div class="session-summary">
+                    <div class="session-time">
+                        <span class="label">Session Time:</span>
+                        <span class="value" id="analyticsSessionTime">00:00</span>
+                    </div>
+                </div>
+                
+                <div class="zone-histogram">
+                    <h4>Time in Each Zone</h4>
+                    <div class="histogram-container">
+                        <div class="histogram-bar-container" data-zone="1">
+                            <div class="histogram-bar zone-1" style="height: 0%;">
+                                <div class="bar-value">0%</div>
+                            </div>
+                            <div class="zone-label">
+                                <div class="zone-name">Zone 1</div>
+                                <div class="zone-time">00:00</div>
+                                <div class="zone-range" id="analyticsZone1Range">104-124 BPM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="histogram-bar-container" data-zone="2">
+                            <div class="histogram-bar zone-2" style="height: 0%;">
+                                <div class="bar-value">0%</div>
+                            </div>
+                            <div class="zone-label">
+                                <div class="zone-name">Zone 2</div>
+                                <div class="zone-time">00:00</div>
+                                <div class="zone-range" id="analyticsZone2Range">124-143 BPM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="histogram-bar-container" data-zone="3">
+                            <div class="histogram-bar zone-3" style="height: 0%;">
+                                <div class="bar-value">0%</div>
+                            </div>
+                            <div class="zone-label">
+                                <div class="zone-name">Zone 3</div>
+                                <div class="zone-time">00:00</div>
+                                <div class="zone-range" id="analyticsZone3Range">143-162 BPM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="histogram-bar-container" data-zone="4">
+                            <div class="histogram-bar zone-4" style="height: 0%;">
+                                <div class="bar-value">0%</div>
+                            </div>
+                            <div class="zone-label">
+                                <div class="zone-name">Zone 4</div>
+                                <div class="zone-time">00:00</div>
+                                <div class="zone-range" id="analyticsZone4Range">162-181 BPM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="histogram-bar-container" data-zone="5">
+                            <div class="histogram-bar zone-5" style="height: 0%;">
+                                <div class="bar-value">0%</div>
+                            </div>
+                            <div class="zone-label">
+                                <div class="zone-name">Zone 5</div>
+                                <div class="zone-time">00:00</div>
+                                <div class="zone-range" id="analyticsZone5Range">181-190 BPM</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analytics-empty-state" id="analyticsEmptyState">
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-title">No HR Data Yet</div>
+                    <div class="empty-message">Start your session and connect a heart rate monitor to see zone analytics.</div>
                 </div>
             </div>
         </div>
