@@ -760,7 +760,7 @@ function updateHistogram(totalTime: number): void {
     }
     
     const percentage = (zoneTime / totalTime) * 100;
-    const barHeight = Math.max(percentage, 2); // Minimum 2% height for visibility
+    const barHeight = Math.max(percentage, 10); // Minimum height for percentage label visibility
     
     // Update bar height
     const bar = document.querySelector(`.histogram-bar-container[data-zone="${i}"] .histogram-bar`) as HTMLElement;
