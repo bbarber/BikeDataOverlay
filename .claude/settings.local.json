@@ -45,7 +45,9 @@
       "Bash(npm start:*)",
       "Bash(open:*)",
       "Bash(npm cache clean:*)",
-      "Bash(vs_installer.exe modify:*)"
+      "Bash(vs_installer.exe modify:*)",
+      "Bash(gh issue view:*)",
+      "Bash(npx:*)"
     ],
     "deny": [],
     "ask": [],
