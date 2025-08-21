@@ -41,7 +41,6 @@ function createOverlayWindow(): void {
 
   // Only open dev tools in development mode
   if (process.argv.includes('--dev') || MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    overlayWindow.webContents.openDevTools({ mode: 'detach' });
 
     // Setup live reload in development mode
     const watcher = chokidar.watch([
