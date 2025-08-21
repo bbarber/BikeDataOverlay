@@ -59,6 +59,7 @@ body {
 
 .device-panel.visible {
     display: block;
+    animation: slideIn 0.3s ease-out;
 }
 
 .device-panel-header {
@@ -143,6 +144,7 @@ body {
 
 .hr-zone-panel.visible {
     display: block;
+    animation: slideIn 0.3s ease-out;
 }
 
 .hr-zone-panel-header {
