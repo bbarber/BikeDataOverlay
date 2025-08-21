@@ -19,6 +19,7 @@ let updateInterval: NodeJS.Timeout | null = null;
 let devicePanelVisible = false;
 let isScanning = false;
 let showAllDevices = false;
+let testMode = false;
 
 // Timer variables
 let timerInterval: NodeJS.Timeout | null = null;
@@ -80,6 +81,7 @@ function initializeApp(): void {
   updateTimerDisplay();
   loadHrConfig();
   loadShowAllDevicesState();
+  loadTestModeState();
   
   // Set up event listeners
   setupEventListeners();
@@ -102,6 +104,10 @@ function setupEventListeners(): void {
   // Device filter toggle
   const showAllToggle = document.getElementById('showAllDevicesToggle') as HTMLInputElement;
   showAllToggle?.addEventListener('change', handleShowAllDevicesToggle);
+  
+  // Test mode toggle
+  const testModeToggle = document.getElementById('testModeToggle') as HTMLInputElement;
+  testModeToggle?.addEventListener('change', handleTestModeToggle);
   
   // HR Zone panel event listeners
   const hrZoneToggleBtn = document.getElementById('toggleHrZonePanel');
@@ -577,6 +583,44 @@ async function handleShowAllDevicesToggle(event: Event): Promise<void> {
     // Revert the toggle on error
     target.checked = !showAllDevices;
     showAllDevices = !showAllDevices;
+  }
+}
+
+async function loadTestModeState(): Promise<void> {
+  try {
+    testMode = await window.electronAPI.getTestMode();
+    const toggle = document.getElementById('testModeToggle') as HTMLInputElement;
+    if (toggle) {
+      toggle.checked = testMode;
+    }
+  } catch (error) {
+    console.error('Failed to load test mode state:', error);
+  }
+}
+
+async function handleTestModeToggle(event: Event): Promise<void> {
+  const target = event.target as HTMLInputElement;
+  testMode = target.checked;
+  
+  try {
+    const result = await window.electronAPI.setTestMode(testMode);
+    console.log(`Test mode ${result ? 'enabled' : 'disabled'}`);
+    
+    // Update the status message
+    const statusEl = document.querySelector('.status-text');
+    if (statusEl) {
+      statusEl.textContent = testMode ? 'Test mode enabled - generating mock data' : 'Ready to scan';
+    }
+    
+    // If test mode is enabled, start the metrics updates
+    if (testMode) {
+      startMetricsUpdates();
+    }
+  } catch (error) {
+    console.error('Failed to set test mode:', error);
+    // Revert the toggle on error
+    target.checked = !testMode;
+    testMode = !testMode;
   }
 }
 

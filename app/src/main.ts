@@ -226,6 +226,15 @@ ipcMain.handle('get-show-all-devices', async (): Promise<boolean> => {
   return bluetoothService?.getShowAllDevices() || false;
 });
 
+ipcMain.handle('set-test-mode', async (event, enabled: boolean): Promise<boolean> => {
+  bluetoothService?.setTestMode(enabled);
+  return bluetoothService?.getTestMode() || false;
+});
+
+ipcMain.handle('get-test-mode', async (): Promise<boolean> => {
+  return bluetoothService?.getTestMode() || false;
+});
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.

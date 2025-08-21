@@ -887,3 +887,8 @@ body {
 .toggle-checkbox:checked + .toggle-label .toggle-text {
     color: #00ff88;
 }
+
+/* Utility spacing class */
+.mt-2 {
+    margin-top: 12px;
+}
