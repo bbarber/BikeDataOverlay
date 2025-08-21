@@ -44,6 +44,8 @@ export class BluetoothService extends EventEmitter {
   private scanTimeout: NodeJS.Timeout | null = null;
   private simulationInterval: NodeJS.Timeout | null = null;
   private showAllDevices = false;
+  private testMode = false;
+  private testDataInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     super();
@@ -376,6 +378,11 @@ export class BluetoothService extends EventEmitter {
         this.simulationInterval = null;
       }
 
+      if (this.testDataInterval) {
+        clearInterval(this.testDataInterval);
+        this.testDataInterval = null;
+      }
+
       if (this.isScanning) {
         noble.stopScanning();
       }
@@ -433,5 +440,79 @@ export class BluetoothService extends EventEmitter {
 
   getShowAllDevices(): boolean {
     return this.showAllDevices;
+  }
+
+  setTestMode(enabled: boolean): void {
+    this.testMode = enabled;
+    console.log(`Test mode ${enabled ? 'enabled' : 'disabled'}`);
+    
+    if (enabled) {
+      this.startTestDataGeneration();
+    } else {
+      this.stopTestDataGeneration();
+    }
+  }
+
+  getTestMode(): boolean {
+    return this.testMode;
+  }
+
+  private startTestDataGeneration(): void {
+    if (this.testDataInterval) {
+      clearInterval(this.testDataInterval);
+    }
+
+    console.log('Starting test data generation...');
+    this.isConnected = true;
+    this.connectedDeviceName = 'Test Trainer';
+    this.updateConnectionStatus();
+
+    // Generate realistic cycling data
+    let time = 0;
+    this.testDataInterval = setInterval(() => {
+      time += 1;
+      
+      // Generate realistic cycling metrics with some variation
+      const baseWatts = 150;
+      const baseCadence = 85;
+      const baseSpeed = 25;
+      const baseHeartRate = 140;
+      
+      // Add some realistic variation
+      const wattsVariation = Math.sin(time * 0.1) * 30 + Math.random() * 20 - 10;
+      const cadenceVariation = Math.sin(time * 0.05) * 10 + Math.random() * 8 - 4;
+      const speedVariation = Math.sin(time * 0.08) * 5 + Math.random() * 3 - 1.5;
+      const hrVariation = Math.sin(time * 0.03) * 15 + Math.random() * 10 - 5;
+      
+      this.currentMetrics = {
+        watts: Math.max(0, Math.round(baseWatts + wattsVariation)),
+        cadence: Math.max(0, Math.round(baseCadence + cadenceVariation)),
+        speed: Math.max(0, Math.round((baseSpeed + speedVariation) * 10) / 10),
+        heartRate: Math.max(60, Math.round(baseHeartRate + hrVariation)),
+        timestamp: new Date().toISOString()
+      };
+      
+      this.emit('metricsUpdate', this.currentMetrics);
+    }, 1000);
+  }
+
+  private stopTestDataGeneration(): void {
+    if (this.testDataInterval) {
+      clearInterval(this.testDataInterval);
+      this.testDataInterval = null;
+      console.log('Test data generation stopped');
+    }
+
+    // Reset connection status
+    this.isConnected = false;
+    this.connectedDeviceName = null;
+    this.currentMetrics = {
+      watts: 0,
+      cadence: 0,
+      speed: 0,
+      heartRate: 0,
+      timestamp: new Date().toISOString()
+    };
+    this.updateConnectionStatus();
   }
 }

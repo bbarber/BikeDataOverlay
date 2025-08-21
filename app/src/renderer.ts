@@ -14,11 +14,13 @@
 
 import './index.css';
 import { CyclingMetrics, ScanResult, ConnectionResult } from './types/CyclingMetrics';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 let updateInterval: NodeJS.Timeout | null = null;
 let devicePanelVisible = false;
 let isScanning = false;
 let showAllDevices = false;
+let testMode = false;
 
 // Timer variables
 let timerInterval: NodeJS.Timeout | null = null;
@@ -35,7 +37,35 @@ let hrConfig = {
 };
 let hrZones: any = {};
 
+// HR Zone Analytics variables
+let analyticsVisible = false;
+let currentHrZone = 1;
+let lastZoneUpdateTime = 0;
+let hasValidHeartRate = false;
+let zoneTrackingStartTime: number | null = null;
+let zoneTimes = {
+  zone1: 0,
+  zone2: 0,
+  zone3: 0,
+  zone4: 0,
+  zone5: 0
+};
+let zoneTrackingInterval: NodeJS.Timeout | null = null;
+
+// HR Chart variables
+interface HRDataPoint {
+  timestamp: number;
+  heartRate: number;
+  zone: number;
+}
+let hrDataPoints: HRDataPoint[] = [];
+let hrChart: Chart | null = null;
+const MAX_DATA_POINTS = 1000; // Limit to ~16 minutes of data
+
 console.log('👋 This message is being logged by "renderer.ts", included via Vite');
+
+// Register Chart.js components
+Chart.register(...registerables);
 
 // Wait for the DOM to be loaded and the API to be available
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,9 +96,14 @@ function initializeApp(): void {
   updateTimerDisplay();
   loadHrConfig();
   loadShowAllDevicesState();
+  loadTestModeState();
+  initializeHrChart();
   
   // Set up event listeners
   setupEventListeners();
+  
+  // Auto-start timer
+  startTimer();
 }
 
 function setupEventListeners(): void {
@@ -88,6 +123,10 @@ function setupEventListeners(): void {
   // Device filter toggle
   const showAllToggle = document.getElementById('showAllDevicesToggle') as HTMLInputElement;
   showAllToggle?.addEventListener('change', handleShowAllDevicesToggle);
+  
+  // Test mode toggle
+  const testModeToggle = document.getElementById('testModeToggle') as HTMLInputElement;
+  testModeToggle?.addEventListener('change', handleTestModeToggle);
   
   // HR Zone panel event listeners
   const hrZoneToggleBtn = document.getElementById('toggleHrZonePanel');
@@ -156,6 +195,19 @@ function setupEventListeners(): void {
   document.getElementById('startTimer')?.addEventListener('click', startTimer);
   document.getElementById('stopTimer')?.addEventListener('click', stopTimer);
   document.getElementById('resetTimer')?.addEventListener('click', resetTimer);
+  
+  // Analytics panel event listeners
+  document.getElementById('toggleAnalyticsPanel')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleAnalyticsPanel();
+  });
+  
+  document.getElementById('closeAnalyticsPanel')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeAnalyticsPanel();
+  });
 }
 
 function updateMetricsDisplay(metrics: CyclingMetrics): void {
@@ -358,46 +410,6 @@ function updateTimerButtonVisibility(): void {
   }
 }
 
-function startTimer(): void {
-  if (!isTimerRunning) {
-    isTimerRunning = true;
-    timerStartTime = Date.now() - 1000;
-    timerInterval = setInterval(updateTimerDisplay, 100);
-    
-    const totalTime = timerElapsedTime + (Date.now() - (timerStartTime || 0));
-    const totalTimeElement = document.getElementById('totalTime');
-    if (totalTimeElement) {
-      totalTimeElement.textContent = formatTime(totalTime);
-    }
-    updateTimerButtonVisibility();
-    
-    console.log('Timer started');
-  }
-}
-
-function stopTimer(): void {
-  if (isTimerRunning) {
-    isTimerRunning = false;
-    timerElapsedTime += Date.now() - (timerStartTime || 0);
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
-    updateTimerDisplay();
-    console.log('Timer stopped');
-  }
-}
-
-function resetTimer(): void {
-  isTimerRunning = false;
-  timerElapsedTime = 0;
-  timerStartTime = null;
-  if (timerInterval) {
-    clearInterval(timerInterval);
-  }
-  updateTimerDisplay();
-  console.log('Timer reset');
-}
-
 // HR Zone functions
 function calculateHrZones(age: number, restingHR: number = 60): any {
   const maxHR = Math.round(208 - 0.7 * age);
@@ -504,29 +516,6 @@ function getHrZone(heartRate: number): { zone: number; name: string; inTarget: b
   return { zone: 5, name: hrZones.zone5.name, inTarget: hrConfig.targetZone === 5 };
 }
 
-function updateHeartRateDisplay(heartRate: number): void {
-  const hrElement = document.getElementById('heartRate');
-  const zoneElement = document.getElementById('hrZoneLabel');
-  
-  if (heartRate > 0) {
-    if (hrElement) hrElement.textContent = Math.round(heartRate).toString();
-    
-    const zone = getHrZone(heartRate);
-    if (zoneElement) zoneElement.textContent = `Zone ${zone.zone} (${zone.name})`;
-    
-    hrElement?.classList.remove('hr-in-zone', 'hr-out-of-zone');
-    if (zone.inTarget) {
-      hrElement?.classList.add('hr-in-zone');
-    } else {
-      hrElement?.classList.add('hr-out-of-zone');
-    }
-  } else {
-    if (hrElement) hrElement.textContent = '--';
-    if (zoneElement) zoneElement.textContent = 'Zone 1';
-    hrElement?.classList.remove('hr-in-zone', 'hr-out-of-zone');
-  }
-}
-
 function closeHrZonePanel(): void {
   const hrZonePanel = document.getElementById('hrZonePanel');
   hrZonePanelVisible = false;
@@ -547,6 +536,9 @@ function toggleHrZonePanel(): void {
     if (devicePanelVisible) {
       closeDevicePanel();
     }
+    if (analyticsVisible) {
+      closeAnalyticsPanel();
+    }
     hrZonePanel?.classList.add('visible');
     updateHrInputs();
     updateHrZoneDisplay();
@@ -564,6 +556,9 @@ function toggleDevicePanel(): void {
   if (devicePanelVisible) {
     if (hrZonePanelVisible) {
       closeHrZonePanel();
+    }
+    if (analyticsVisible) {
+      closeAnalyticsPanel();
     }
     devicePanel?.classList.add('visible');
     console.log('Device panel should now be visible');
@@ -610,8 +605,463 @@ async function handleShowAllDevicesToggle(event: Event): Promise<void> {
   }
 }
 
+async function loadTestModeState(): Promise<void> {
+  try {
+    testMode = await window.electronAPI.getTestMode();
+    const toggle = document.getElementById('testModeToggle') as HTMLInputElement;
+    if (toggle) {
+      toggle.checked = testMode;
+    }
+  } catch (error) {
+    console.error('Failed to load test mode state:', error);
+  }
+}
+
+async function handleTestModeToggle(event: Event): Promise<void> {
+  const target = event.target as HTMLInputElement;
+  testMode = target.checked;
+  
+  try {
+    const result = await window.electronAPI.setTestMode(testMode);
+    console.log(`Test mode ${result ? 'enabled' : 'disabled'}`);
+    
+    // Update the status message
+    const statusEl = document.querySelector('.status-text');
+    if (statusEl) {
+      statusEl.textContent = testMode ? 'Test mode enabled - generating mock data' : 'Ready to scan';
+    }
+    
+    // If test mode is enabled, start the metrics updates
+    if (testMode) {
+      startMetricsUpdates();
+    }
+  } catch (error) {
+    console.error('Failed to set test mode:', error);
+    // Revert the toggle on error
+    target.checked = !testMode;
+    testMode = !testMode;
+  }
+}
+
 // Make functions available globally for onclick handlers
 (window as any).connectToDevice = connectToDevice;
 
+// Zone Analytics Functions
+function startZoneTracking(): void {
+  if (!zoneTrackingStartTime) {
+    zoneTrackingStartTime = Date.now();
+    lastZoneUpdateTime = Date.now();
+    
+    // Start interval to track zone time
+    zoneTrackingInterval = setInterval(updateZoneTracking, 1000);
+    console.log('Zone tracking started');
+  }
+}
+
+function stopZoneTracking(): void {
+  if (zoneTrackingInterval) {
+    // Final update before stopping
+    updateZoneTracking();
+    clearInterval(zoneTrackingInterval);
+    zoneTrackingInterval = null;
+    console.log('Zone tracking stopped');
+  }
+}
+
+function resetZoneTracking(): void {
+  stopZoneTracking();
+  zoneTrackingStartTime = null;
+  lastZoneUpdateTime = 0;
+  hasValidHeartRate = false;
+  zoneTimes = {
+    zone1: 0,
+    zone2: 0,
+    zone3: 0,
+    zone4: 0,
+    zone5: 0
+  };
+  updateAnalyticsDisplay();
+  console.log('Zone tracking reset');
+}
+
+function updateZoneTracking(): void {
+  if (!zoneTrackingStartTime || !lastZoneUpdateTime || !hasValidHeartRate) return;
+  
+  const now = Date.now();
+  const timeInCurrentZone = now - lastZoneUpdateTime;
+  
+  // Add time to current zone only if we have valid heart rate data
+  const zoneKey = `zone${currentHrZone}` as keyof typeof zoneTimes;
+  zoneTimes[zoneKey] += timeInCurrentZone;
+  
+  lastZoneUpdateTime = now;
+  
+  // Update analytics display if visible
+  if (analyticsVisible) {
+    updateAnalyticsDisplay();
+  }
+}
+
+function updateCurrentZone(heartRate: number): void {
+  if (heartRate <= 0) {
+    hasValidHeartRate = false;
+    return;
+  }
+  
+  hasValidHeartRate = true;
+  const zone = getHrZone(heartRate);
+  if (zone.zone !== currentHrZone) {
+    // Update zone tracking if tracking is active
+    if (zoneTrackingStartTime) {
+      updateZoneTracking();
+    }
+    currentHrZone = zone.zone;
+    lastZoneUpdateTime = Date.now();
+  }
+}
+
+function toggleAnalyticsPanel(): void {
+  analyticsVisible = !analyticsVisible;
+  const panel = document.getElementById('hrAnalyticsPanel');
+  
+  if (analyticsVisible) {
+    // Close other panels
+    if (hrZonePanelVisible) closeHrZonePanel();
+    if (devicePanelVisible) closeDevicePanel();
+    
+    panel?.classList.add('visible');
+    updateAnalyticsDisplay();
+    updateAnalyticsZoneRanges();
+  } else {
+    panel?.classList.remove('visible');
+  }
+}
+
+function closeAnalyticsPanel(): void {
+  analyticsVisible = false;
+  const panel = document.getElementById('hrAnalyticsPanel');
+  panel?.classList.remove('visible');
+}
+
+function updateAnalyticsDisplay(): void {
+  const totalSessionTime = getTotalSessionTime();
+  updateHistogram(totalSessionTime);
+  updateEmptyState(totalSessionTime);
+}
+
+function getTotalSessionTime(): number {
+  if (!zoneTrackingStartTime) return 0;
+  
+  const baseTime = Object.values(zoneTimes).reduce((total, time) => total + time, 0);
+  
+  // Add current zone time if tracking is active
+  if (zoneTrackingInterval && lastZoneUpdateTime) {
+    const currentZoneTime = Date.now() - lastZoneUpdateTime;
+    return baseTime + currentZoneTime;
+  }
+  
+  return baseTime;
+}
+
+
+function updateHistogram(totalTime: number): void {
+  if (totalTime === 0) return;
+  
+  for (let i = 1; i <= 5; i++) {
+    const zoneKey = `zone${i}` as keyof typeof zoneTimes;
+    let zoneTime = zoneTimes[zoneKey];
+    
+    // Add current zone time if this is the active zone
+    if (currentHrZone === i && zoneTrackingInterval && lastZoneUpdateTime) {
+      zoneTime += Date.now() - lastZoneUpdateTime;
+    }
+    
+    const percentage = (zoneTime / totalTime) * 100;
+    const barHeight = Math.max(percentage, 10); // Minimum height for percentage label visibility
+    
+    // Update bar height
+    const bar = document.querySelector(`.histogram-bar-container[data-zone="${i}"] .histogram-bar`) as HTMLElement;
+    if (bar) {
+      bar.style.height = `${barHeight}%`;
+    }
+    
+    // Update percentage display
+    const valueEl = document.querySelector(`.histogram-bar-container[data-zone="${i}"] .bar-value`) as HTMLElement;
+    if (valueEl) {
+      valueEl.textContent = `${Math.round(percentage)}%`;
+    }
+    
+    // Update time display
+    const timeEl = document.querySelector(`.histogram-bar-container[data-zone="${i}"] .zone-time`) as HTMLElement;
+    if (timeEl) {
+      timeEl.textContent = formatTime(zoneTime);
+    }
+  }
+}
+
+function updateAnalyticsZoneRanges(): void {
+  for (let i = 1; i <= 5; i++) {
+    const zone = hrZones[`zone${i}`];
+    const rangeElement = document.getElementById(`analyticsZone${i}Range`);
+    if (rangeElement && zone) {
+      rangeElement.textContent = `${zone.min}-${zone.max} BPM`;
+    }
+  }
+}
+
+function updateEmptyState(totalTime: number): void {
+  const emptyState = document.getElementById('analyticsEmptyState');
+  const histogram = document.querySelector('.zone-histogram') as HTMLElement;
+  const hrChartTitles = document.querySelectorAll('.analytics-panel-content h4');
+  const hrChartTitle = hrChartTitles[1] as HTMLElement; // Second h4 is "Heart Rate Chart"
+  const hrChartSection = document.querySelector('.hr-chart-section') as HTMLElement;
+  
+  if (totalTime === 0) {
+    emptyState?.classList.remove('hidden');
+    if (histogram) histogram.style.display = 'none';
+    if (hrChartTitle) hrChartTitle.style.display = 'none';
+    if (hrChartSection) hrChartSection.style.display = 'none';
+  } else {
+    emptyState?.classList.add('hidden');
+    if (histogram) histogram.style.display = 'block';
+    if (hrChartTitle) hrChartTitle.style.display = 'block';
+    if (hrChartSection) hrChartSection.style.display = 'block';
+  }
+}
+
+// Enhanced heart rate display to include zone tracking
+function updateHeartRateDisplay(heartRate: number): void {
+  const hrElement = document.getElementById('heartRate');
+  const zoneElement = document.getElementById('hrZoneLabel');
+  
+  if (heartRate > 0) {
+    if (hrElement) hrElement.textContent = Math.round(heartRate).toString();
+    
+    const zone = getHrZone(heartRate);
+    if (zoneElement) zoneElement.textContent = `Zone ${zone.zone} (${zone.name})`;
+    
+    hrElement?.classList.remove('hr-in-zone', 'hr-out-of-zone');
+    if (zone.inTarget) {
+      hrElement?.classList.add('hr-in-zone');
+    } else {
+      hrElement?.classList.add('hr-out-of-zone');
+    }
+    
+    // Update current zone for tracking
+    updateCurrentZone(heartRate);
+    
+    // Add data point to chart if tracking is active
+    if (zoneTrackingStartTime && zone) {
+      addHrDataPoint(heartRate, zone.zone);
+    }
+  } else {
+    if (hrElement) hrElement.textContent = '--';
+    if (zoneElement) zoneElement.textContent = 'Zone 1';
+    hrElement?.classList.remove('hr-in-zone', 'hr-out-of-zone');
+  }
+}
+
+// Enhanced timer functions to integrate with zone tracking
+function startTimer(): void {
+  if (!isTimerRunning) {
+    isTimerRunning = true;
+    timerStartTime = Date.now() - 1000;
+    timerInterval = setInterval(updateTimerDisplay, 100);
+    
+    // Start zone tracking
+    startZoneTracking();
+    
+    const totalTime = timerElapsedTime + (Date.now() - (timerStartTime || 0));
+    const totalTimeElement = document.getElementById('totalTime');
+    if (totalTimeElement) {
+      totalTimeElement.textContent = formatTime(totalTime);
+    }
+    updateTimerButtonVisibility();
+    
+    console.log('Timer started');
+  }
+}
+
+function stopTimer(): void {
+  if (isTimerRunning) {
+    isTimerRunning = false;
+    timerElapsedTime += Date.now() - (timerStartTime || 0);
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+    
+    // Stop zone tracking
+    stopZoneTracking();
+    
+    updateTimerDisplay();
+    console.log('Timer stopped');
+  }
+}
+
+function resetTimer(): void {
+  isTimerRunning = false;
+  timerElapsedTime = 0;
+  timerStartTime = null;
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+  
+  // Reset zone tracking
+  resetZoneTracking();
+  
+  // Reset HR chart
+  resetHrChart();
+  
+  updateTimerDisplay();
+  console.log('Timer reset');
+}
+
+// HR Chart Functions
+function initializeHrChart(): void {
+  const canvas = document.getElementById('hrLineChart') as HTMLCanvasElement;
+  if (!canvas) {
+    console.error('HR chart canvas not found');
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error('Unable to get canvas context');
+    return;
+  }
+
+  const config: ChartConfiguration = {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Heart Rate (BPM)',
+        data: [],
+        borderColor: '#00ff88',
+        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        pointHoverRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      backgroundColor: 'transparent',
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Time',
+            color: 'rgba(255, 255, 255, 0.8)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.6)',
+            maxTicksLimit: 8
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Heart Rate (BPM)',
+            color: 'rgba(255, 255, 255, 0.8)'
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.6)'
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          min: 60,
+          max: 200
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: '#00ff88',
+          bodyColor: 'white',
+          borderColor: '#00ff88',
+          borderWidth: 1,
+          callbacks: {
+            title: function(context) {
+              return `Time: ${context[0].label}`;
+            },
+            label: function(context) {
+              const dataPoint = hrDataPoints[context.dataIndex];
+              return [
+                `Heart Rate: ${context.parsed.y} BPM`,
+                `Zone: ${dataPoint?.zone || 'N/A'}`
+              ];
+            }
+          }
+        }
+      },
+      animation: {
+        duration: 0
+      }
+    }
+  };
+
+  hrChart = new Chart(ctx, config);
+  console.log('HR chart initialized');
+}
+
+function addHrDataPoint(heartRate: number, zone: number): void {
+  if (!zoneTrackingStartTime || heartRate <= 0) return;
+
+  const now = Date.now();
+  const sessionTime = now - zoneTrackingStartTime;
+  
+  const dataPoint: HRDataPoint = {
+    timestamp: sessionTime,
+    heartRate: heartRate,
+    zone: zone
+  };
+
+  hrDataPoints.push(dataPoint);
+
+  // Limit data points to prevent memory issues
+  if (hrDataPoints.length > MAX_DATA_POINTS) {
+    hrDataPoints.shift();
+  }
+
+  updateHrChart();
+}
+
+function updateHrChart(): void {
+  if (!hrChart || hrDataPoints.length === 0) return;
+
+  const labels = hrDataPoints.map(point => formatTime(point.timestamp));
+  const data = hrDataPoints.map(point => point.heartRate);
+
+  hrChart.data.labels = labels;
+  hrChart.data.datasets[0].data = data;
+  hrChart.update('none');
+}
+
+function resetHrChart(): void {
+  hrDataPoints = [];
+  if (hrChart) {
+    hrChart.data.labels = [];
+    hrChart.data.datasets[0].data = [];
+    hrChart.update('none');
+  }
+}
+
 // Clean up on page unload
-window.addEventListener('beforeunload', stopMetricsUpdates);
+window.addEventListener('beforeunload', () => {
+  stopMetricsUpdates();
+  stopZoneTracking();
+  if (hrChart) {
+    hrChart.destroy();
+  }
+});

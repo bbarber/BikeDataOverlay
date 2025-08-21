@@ -41,7 +41,6 @@ function createOverlayWindow(): void {
 
   // Only open dev tools in development mode
   if (process.argv.includes('--dev') || MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    overlayWindow.webContents.openDevTools({ mode: 'detach' });
 
     // Setup live reload in development mode
     const watcher = chokidar.watch([
@@ -225,6 +224,15 @@ ipcMain.handle('set-show-all-devices', async (event, showAll: boolean): Promise<
 
 ipcMain.handle('get-show-all-devices', async (): Promise<boolean> => {
   return bluetoothService?.getShowAllDevices() || false;
+});
+
+ipcMain.handle('set-test-mode', async (event, enabled: boolean): Promise<boolean> => {
+  bluetoothService?.setTestMode(enabled);
+  return bluetoothService?.getTestMode() || false;
+});
+
+ipcMain.handle('get-test-mode', async (): Promise<boolean> => {
+  return bluetoothService?.getTestMode() || false;
 });
 
 // This method will be called when Electron has finished

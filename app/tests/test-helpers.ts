@@ -5,23 +5,32 @@ import * as path from 'path';
  * Launch Electron app for testing with correct Electron Forge structure
  */
 export async function launchElectronApp(): Promise<ElectronApplication> {
-  // First check if the app is already built
-  const mainPath = path.join(__dirname, '..', '.vite', 'build', 'main.js');
+  // Try to launch with the packaged app first
+  const packagedAppPath = path.join(__dirname, '..', 'out', 'Bike Data Overlay-darwin-arm64', 'Bike Data Overlay.app', 'Contents', 'MacOS', 'bike-data-overlay');
   
   try {
-    // Try to launch with the built main file
+    // Launch the packaged app
     return await electron.launch({
-      args: [mainPath],
-      executablePath: require('electron')
+      executablePath: packagedAppPath
     });
   } catch (error) {
-    console.log('Built app not found, building first...');
+    console.log('Packaged app not found, trying .vite build...');
     
-    // If built app doesn't exist, we need to build it first
-    // For now, throw an error with instructions
-    throw new Error(
-      'Electron app not built. Please run "npm run package" or "npm start" once to build the app before running tests.'
-    );
+    // Fallback to .vite build
+    const mainPath = path.join(__dirname, '..', '.vite', 'build', 'main.js');
+    try {
+      return await electron.launch({
+        args: [mainPath],
+        executablePath: require('electron')
+      });
+    } catch (error2) {
+      console.log('Built app not found either, building first...');
+      
+      // If neither exists, we need to build first
+      throw new Error(
+        'Electron app not built. Please run "npm run package" or "npm start" once to build the app before running tests.'
+      );
+    }
   }
 }
 

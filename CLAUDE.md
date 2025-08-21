@@ -18,19 +18,13 @@
 ## PROJECT COMMANDS
 
 ```bash
-# Electron App Development
-npm run start
-npm run build
-npm run test
-
-# Frontend (if separate)
-cd frontend && npm install
-cd frontend && npm start
-cd frontend && npm run dev
+# Electron app
+cd app && npm install
+cd app && npm start
 
 # Testing
-npm test
-cd frontend && npm test  # if separate frontend
+cd app && npm test
+cd app && npm test  # if separate frontend
 
 # Individual Playwright Tests
 # Run specific test file

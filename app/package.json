@@ -45,6 +45,7 @@
   "dependencies": {
     "@stoprocent/noble": "^2.3.4",
     "chokidar": "^4.0.3",
-    "electron-squirrel-startup": "^1.0.1"
+    "electron-squirrel-startup": "^1.0.1",
+    "chart.js": "^4.4.0"
   }
 }
