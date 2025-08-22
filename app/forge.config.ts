@@ -14,7 +14,7 @@ const config: ForgeConfig = {
       unpack: '**/node_modules/@stoprocent/noble/**/*'
     },
     name: 'Bike Data Overlay',
-    executableName: 'bike-data-overlay',
+    executableName: 'BikeDataOverlay',
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],
