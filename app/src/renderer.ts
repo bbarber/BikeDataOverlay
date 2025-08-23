@@ -131,6 +131,13 @@ function setupEventListeners(): void {
   document.getElementById('scanDevicesBtn')?.addEventListener('click', scanForDevices);
   document.getElementById('refreshDevicesBtn')?.addEventListener('click', loadDeviceList);
   
+  // Settings panel close button
+  document.getElementById('closeSettingsPanel')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeSettingsPanel();
+  });
+  
   // Device filter toggle
   const showAllToggle = document.getElementById('showAllDevicesToggle') as HTMLInputElement;
   showAllToggle?.addEventListener('change', handleShowAllDevicesToggle);
