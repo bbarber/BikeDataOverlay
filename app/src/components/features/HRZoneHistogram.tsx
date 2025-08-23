@@ -21,10 +21,16 @@ const HRZoneHistogram: React.FC = () => {
       const percentage = totalTime > 0 ? (zoneTime / totalTime) * 100 : 0;
       const zoneConfig = hrZones.find(z => z.id === zone.id)!;
       
+      // For display, show minimum 0.1% if there's any time in the zone (for better precision)
+      // But for the bar height, use a minimum of 3% so it's visible
+      const displayPercentage = percentage > 0 && percentage < 0.1 ? 0.1 : Math.round(percentage * 10) / 10;
+      const barHeight = percentage > 0 ? Math.max(3, percentage) : 0;
+      
       return {
         ...zone,
         time: zoneTime,
-        percentage: Math.round(percentage),
+        percentage: barHeight,
+        displayPercentage,
         range: formatZoneRange(zoneConfig),
         formattedTime: formatTime(Math.floor(zoneTime / 1000))
       };
@@ -41,7 +47,7 @@ const HRZoneHistogram: React.FC = () => {
               className={`histogram-bar ${zone.color}`} 
               style={{ height: `${zone.percentage}%` }}
             >
-              <div className="bar-value">{zone.percentage}%</div>
+              <div className="bar-value">{zone.displayPercentage}%</div>
             </div>
             <div className="zone-label">
               <div className="zone-name">Zone {zone.id}</div>

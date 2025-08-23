@@ -29,6 +29,16 @@ const HRChart: React.FC = () => {
       y: point.heartRate
     }));
 
+    // Calculate dynamic y-axis range based on data
+    const heartRates = chartData.map(point => point.y).filter(hr => hr > 0);
+    const minHR = heartRates.length > 0 ? Math.min(...heartRates) : 60;
+    const maxHR = heartRates.length > 0 ? Math.max(...heartRates) : 200;
+    
+    // Add some padding to the range
+    const padding = Math.max(10, (maxHR - minHR) * 0.1);
+    const yMin = Math.max(30, minHR - padding);
+    const yMax = Math.min(250, maxHR + padding);
+
     const config: ChartConfiguration = {
       type: 'line',
       data: {
@@ -61,8 +71,8 @@ const HRChart: React.FC = () => {
           },
           y: {
             beginAtZero: false,
-            min: 60,
-            max: 200,
+            min: yMin,
+            max: yMax,
             ticks: {
               color: 'rgba(255, 255, 255, 0.7)',
               font: {

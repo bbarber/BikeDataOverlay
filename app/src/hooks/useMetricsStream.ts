@@ -35,25 +35,31 @@ export const useMetricsStream = () => {
             
             // Update zone tracking
             const now = Date.now();
-            if (currentZone.current !== zone) {
-              // Zone changed - update time spent in previous zone
-              if (lastZoneUpdate.current > 0) {
-                const timeSpent = now - lastZoneUpdate.current;
-                const zoneKey = `zone${currentZone.current}` as keyof typeof state.hrAnalytics.zoneTimes;
-                const currentZoneTime = state.hrAnalytics.zoneTimes[zoneKey];
-                
-                dispatch({ 
-                  type: 'UPDATE_HR_ANALYTICS', 
-                  payload: { 
-                    zoneTimes: {
-                      ...state.hrAnalytics.zoneTimes,
-                      [zoneKey]: currentZoneTime + timeSpent
-                    }
-                  } 
-                });
-              }
-              
+            
+            // Initialize tracking on first HR data
+            if (lastZoneUpdate.current === 0) {
+              lastZoneUpdate.current = now;
               currentZone.current = zone;
+            } else {
+              // Update time spent in current zone (whether zone changed or not)
+              const timeSpent = now - lastZoneUpdate.current;
+              const zoneKey = `zone${currentZone.current}` as keyof typeof state.hrAnalytics.zoneTimes;
+              const currentZoneTime = state.hrAnalytics.zoneTimes[zoneKey];
+              
+              dispatch({ 
+                type: 'UPDATE_HR_ANALYTICS', 
+                payload: { 
+                  zoneTimes: {
+                    ...state.hrAnalytics.zoneTimes,
+                    [zoneKey]: currentZoneTime + timeSpent
+                  }
+                } 
+              });
+              
+              // Update zone reference for next iteration
+              if (currentZone.current !== zone) {
+                currentZone.current = zone;
+              }
               lastZoneUpdate.current = now;
             }
             
