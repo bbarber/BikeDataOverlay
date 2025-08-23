@@ -17,7 +17,8 @@ import { CyclingMetrics, ScanResult, ConnectionResult } from './types/CyclingMet
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 let updateInterval: NodeJS.Timeout | null = null;
-let devicePanelVisible = false;
+let settingsPanelVisible = false;
+let activeTab: string = 'devices';
 let isScanning = false;
 let showAllDevices = false;
 let testMode = false;
@@ -29,7 +30,6 @@ let timerElapsedTime = 0;
 let isTimerRunning = false;
 
 // HR Zone variables
-let hrZonePanelVisible = false;
 let hrConfig = {
   age: 30,
   restingHR: 60,
@@ -107,13 +107,24 @@ function initializeApp(): void {
 }
 
 function setupEventListeners(): void {
-  // Device panel toggle
-  const toggleBtn = document.getElementById('toggleDevicePanel');
+  // Settings panel toggle
+  const toggleBtn = document.getElementById('toggleSettingsPanel');
   toggleBtn?.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('Toggle button clicked');
-    toggleDevicePanel();
+    toggleSettingsPanel();
+  });
+  
+  // Tab switching
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const tabName = target.dataset.tab;
+      if (tabName) {
+        switchTab(tabName);
+      }
+    });
   });
   
   // Device management buttons
@@ -128,34 +139,7 @@ function setupEventListeners(): void {
   const testModeToggle = document.getElementById('testModeToggle') as HTMLInputElement;
   testModeToggle?.addEventListener('change', handleTestModeToggle);
   
-  // HR Zone panel event listeners
-  const hrZoneToggleBtn = document.getElementById('toggleHrZonePanel');
-  hrZoneToggleBtn?.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleHrZonePanel();
-  });
   
-  // HR Zone configuration buttons
-  document.getElementById('calculateZones')?.addEventListener('click', () => {
-    const ageInput = document.getElementById('userAge');
-    const restingHRInput = document.getElementById('restingHR');
-    
-    if (ageInput && 'value' in ageInput) {
-      hrConfig.age = parseInt((ageInput as HTMLInputElement).value);
-    }
-    if (restingHRInput && 'value' in restingHRInput) {
-      hrConfig.restingHR = parseInt((restingHRInput as HTMLInputElement).value);
-    }
-    
-    const selectedZone = document.querySelector('input[name="targetZone"]:checked') as HTMLInputElement;
-    if (selectedZone) {
-      hrConfig.targetZone = parseInt(selectedZone.value);
-    }
-    
-    updateHrZones();
-    saveHrConfig();
-  });
   
   // Add event listeners for zone selection
   document.querySelectorAll('input[name="targetZone"]').forEach(radio => {
@@ -163,6 +147,7 @@ function setupEventListeners(): void {
       const target = e.target as HTMLInputElement;
       if (target.checked) {
         hrConfig.targetZone = parseInt(target.value);
+        updateHrZones();
         saveHrConfig();
       }
     });
@@ -516,58 +501,54 @@ function getHrZone(heartRate: number): { zone: number; name: string; inTarget: b
   return { zone: 5, name: hrZones.zone5.name, inTarget: hrConfig.targetZone === 5 };
 }
 
-function closeHrZonePanel(): void {
-  const hrZonePanel = document.getElementById('hrZonePanel');
-  hrZonePanelVisible = false;
-  hrZonePanel?.classList.remove('visible');
+function closeSettingsPanel(): void {
+  const settingsPanel = document.getElementById('settingsPanel');
+  settingsPanelVisible = false;
+  settingsPanel?.classList.remove('visible');
 }
 
-function closeDevicePanel(): void {
-  const devicePanel = document.getElementById('devicePanel');
-  devicePanelVisible = false;
-  devicePanel?.classList.remove('visible');
-}
 
-function toggleHrZonePanel(): void {
-  const hrZonePanel = document.getElementById('hrZonePanel');
-  hrZonePanelVisible = !hrZonePanelVisible;
+function toggleSettingsPanel(): void {
+  const settingsPanel = document.getElementById('settingsPanel');
+  settingsPanelVisible = !settingsPanelVisible;
   
-  if (hrZonePanelVisible) {
-    if (devicePanelVisible) {
-      closeDevicePanel();
-    }
+  console.log('Toggling settings panel, visible:', settingsPanelVisible);
+  
+  if (settingsPanelVisible) {
     if (analyticsVisible) {
       closeAnalyticsPanel();
     }
-    hrZonePanel?.classList.add('visible');
-    updateHrInputs();
-    updateHrZoneDisplay();
-  } else {
-    hrZonePanel?.classList.remove('visible');
-  }
-}
-
-function toggleDevicePanel(): void {
-  const devicePanel = document.getElementById('devicePanel');
-  devicePanelVisible = !devicePanelVisible;
-  
-  console.log('Toggling device panel, visible:', devicePanelVisible);
-  
-  if (devicePanelVisible) {
-    if (hrZonePanelVisible) {
-      closeHrZonePanel();
-    }
-    if (analyticsVisible) {
-      closeAnalyticsPanel();
-    }
-    devicePanel?.classList.add('visible');
-    console.log('Device panel should now be visible');
+    settingsPanel?.classList.add('visible');
+    console.log('Settings panel should now be visible');
     loadDeviceList().catch(error => {
       console.warn('Failed to load device list, but panel remains visible:', error);
     });
   } else {
-    devicePanel?.classList.remove('visible');
-    console.log('Device panel hidden');
+    settingsPanel?.classList.remove('visible');
+    console.log('Settings panel hidden');
+  }
+}
+
+function switchTab(tabName: string): void {
+  activeTab = tabName;
+  
+  // Update tab buttons
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+  
+  // Update tab content
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.remove('active');
+  });
+  
+  if (tabName === 'devices') {
+    document.getElementById('devicesTab')?.classList.add('active');
+  } else if (tabName === 'hr-zones') {
+    document.getElementById('hrZonesTab')?.classList.add('active');
+    updateHrInputs();
+    updateHrZoneDisplay();
   }
 }
 
@@ -725,9 +706,8 @@ function toggleAnalyticsPanel(): void {
   const panel = document.getElementById('hrAnalyticsPanel');
   
   if (analyticsVisible) {
-    // Close other panels
-    if (hrZonePanelVisible) closeHrZonePanel();
-    if (devicePanelVisible) closeDevicePanel();
+    // Close settings panel if open
+    if (settingsPanelVisible) closeSettingsPanel();
     
     panel?.classList.add('visible');
     updateAnalyticsDisplay();
