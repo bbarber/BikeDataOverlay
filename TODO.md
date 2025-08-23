@@ -2,3 +2,7 @@
 - Update exe name
 - Fix issue where mouse can't click through transparent areas
 - Color code the hr line chart to match the histogram zone colors
+- Get a better svg for HR stats
+- Update reducer to use immer to clean it up
+- HR Histogram is only showing 0% or 100% for each bar. Should compute percentage based on total time spent in that zone
+- HR line graph is not auto for the y-axis. It should be dynamic based on the hr data points

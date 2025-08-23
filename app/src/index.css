@@ -137,12 +137,11 @@ body {
     user-select: none;
     -webkit-user-select: none;
     opacity: 0;
-    visibility: hidden;
+    visibility: visible;
 }
 
 .overlay-container:hover .toggle-btn {
     opacity: 1;
-    visibility: visible;
 }
 
 .heart-rate-container {
@@ -153,13 +152,12 @@ body {
 
 .heart-rate-container .toggle-btn {
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    visibility: visible;
+    transition: opacity 0.3s ease;
 }
 
 .heart-rate-container:hover .toggle-btn {
     opacity: 1;
-    visibility: visible;
 }
 
 .hr-zone-label {

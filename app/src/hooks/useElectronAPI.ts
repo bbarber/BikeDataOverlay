@@ -56,14 +56,42 @@ export const useElectronAPI = () => {
       if (!window.electronAPI) {
         throw new Error('Electron API not available');
       }
-      return window.electronAPI.disconnectFromDevice();
+      return window.electronAPI.disconnect();
     },
     
     getDeviceList: async () => {
       if (!window.electronAPI) {
         throw new Error('Electron API not available');
       }
-      return window.electronAPI.getDeviceList();
+      return window.electronAPI.listDevices();
+    },
+    
+    setTestMode: async (enabled: boolean) => {
+      if (!window.electronAPI) {
+        throw new Error('Electron API not available');
+      }
+      return window.electronAPI.setTestMode(enabled);
+    },
+    
+    getTestMode: async () => {
+      if (!window.electronAPI) {
+        throw new Error('Electron API not available');
+      }
+      return window.electronAPI.getTestMode();
+    },
+    
+    setShowAllDevices: async (showAll: boolean) => {
+      if (!window.electronAPI) {
+        throw new Error('Electron API not available');
+      }
+      return window.electronAPI.setShowAllDevices(showAll);
+    },
+    
+    getShowAllDevices: async () => {
+      if (!window.electronAPI) {
+        throw new Error('Electron API not available');
+      }
+      return window.electronAPI.getShowAllDevices();
     }
   };
 };

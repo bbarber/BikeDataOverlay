@@ -64,13 +64,35 @@ export const useDeviceManager = () => {
     }
   }, [electronAPI, refreshDeviceList]);
 
-  const toggleShowAllDevices = useCallback(() => {
-    dispatch({ type: 'TOGGLE_SHOW_ALL_DEVICES' });
-  }, [dispatch]);
+  const toggleShowAllDevices = useCallback(async () => {
+    try {
+      const newShowAllDevices = !state.devices.showAllDevices;
+      const result = await electronAPI.setShowAllDevices(newShowAllDevices);
+      if (result === newShowAllDevices) {
+        dispatch({ type: 'TOGGLE_SHOW_ALL_DEVICES' });
+        console.log(`Show all devices ${newShowAllDevices ? 'enabled' : 'disabled'}`);
+      } else {
+        console.error('Failed to toggle show all devices setting');
+      }
+    } catch (error) {
+      console.error('Error toggling show all devices:', error);
+    }
+  }, [dispatch, electronAPI, state.devices.showAllDevices]);
 
-  const toggleTestMode = useCallback(() => {
-    dispatch({ type: 'TOGGLE_TEST_MODE' });
-  }, [dispatch]);
+  const toggleTestMode = useCallback(async () => {
+    try {
+      const newTestMode = !state.devices.testMode;
+      const result = await electronAPI.setTestMode(newTestMode);
+      if (result === newTestMode) {
+        dispatch({ type: 'TOGGLE_TEST_MODE' });
+        console.log(`Test mode ${newTestMode ? 'enabled' : 'disabled'}`);
+      } else {
+        console.error('Failed to toggle test mode');
+      }
+    } catch (error) {
+      console.error('Error toggling test mode:', error);
+    }
+  }, [dispatch, electronAPI, state.devices.testMode]);
 
   return {
     devices: state.devices,

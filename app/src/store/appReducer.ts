@@ -97,13 +97,20 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'UPDATE_TIMER_DISPLAY':
       if (!state.timer.isRunning) return state;
+      const newElapsedTime = state.timer.startTime 
+        ? Date.now() - state.timer.startTime 
+        : state.timer.elapsedTime;
+      
+      // Only update if the elapsed time has actually changed significantly (prevent unnecessary re-renders)
+      if (Math.abs(newElapsedTime - state.timer.elapsedTime) < 50) {
+        return state;
+      }
+      
       return {
         ...state,
         timer: {
           ...state.timer,
-          elapsedTime: state.timer.startTime 
-            ? Date.now() - state.timer.startTime 
-            : state.timer.elapsedTime
+          elapsedTime: newElapsedTime
         }
       };
 
@@ -117,11 +124,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       };
 
     case 'TOGGLE_SETTINGS_PANEL':
+      const newSettingsVisible = !state.ui.settingsPanelVisible;
       return {
         ...state,
         ui: {
           ...state.ui,
-          settingsPanelVisible: !state.ui.settingsPanelVisible
+          settingsPanelVisible: newSettingsVisible,
+          // Close analytics panel when opening settings
+          analyticsVisible: newSettingsVisible ? false : state.ui.analyticsVisible
         }
       };
 
@@ -135,11 +145,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       };
 
     case 'TOGGLE_ANALYTICS_PANEL':
+      const newAnalyticsVisible = !state.ui.analyticsVisible;
       return {
         ...state,
         ui: {
           ...state.ui,
-          analyticsVisible: !state.ui.analyticsVisible
+          analyticsVisible: newAnalyticsVisible,
+          // Close settings panel when opening analytics
+          settingsPanelVisible: newAnalyticsVisible ? false : state.ui.settingsPanelVisible
         }
       };
 
@@ -176,6 +189,24 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         devices: {
           ...state.devices,
           testMode: !state.devices.testMode
+        }
+      };
+
+    case 'SET_TEST_MODE':
+      return {
+        ...state,
+        devices: {
+          ...state.devices,
+          testMode: action.payload
+        }
+      };
+
+    case 'SET_SHOW_ALL_DEVICES':
+      return {
+        ...state,
+        devices: {
+          ...state.devices,
+          showAllDevices: action.payload
         }
       };
 

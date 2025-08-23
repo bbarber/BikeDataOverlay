@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import 'chartjs-adapter-date-fns';
 import { useAppState } from '../../store/AppContext';
 
 // Register Chart.js components

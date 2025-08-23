@@ -76,7 +76,9 @@ export type AppAction =
   | { type: 'CLOSE_ANALYTICS_PANEL' }
   | { type: 'SWITCH_TAB'; payload: string }
   | { type: 'TOGGLE_SHOW_ALL_DEVICES' }
+  | { type: 'SET_SHOW_ALL_DEVICES'; payload: boolean }
   | { type: 'TOGGLE_TEST_MODE' }
+  | { type: 'SET_TEST_MODE'; payload: boolean }
   | { type: 'START_SCANNING' }
   | { type: 'STOP_SCANNING' }
   | { type: 'UPDATE_DEVICE_LIST'; payload: any[] }

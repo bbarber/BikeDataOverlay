@@ -16,29 +16,53 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
-  // Load saved configuration from localStorage on mount
+  // Load saved configuration from localStorage and sync with Electron backend on mount
   useEffect(() => {
-    // Load HR configuration
-    const savedHrConfig = localStorage.getItem('bikeDataHrConfig');
-    if (savedHrConfig) {
-      try {
-        const hrConfig = JSON.parse(savedHrConfig);
-        dispatch({ type: 'UPDATE_HR_CONFIG', payload: hrConfig });
-      } catch (error) {
-        console.error('Error loading HR config:', error);
+    const initializeApp = async () => {
+      // Load HR configuration from localStorage
+      const savedHrConfig = localStorage.getItem('bikeDataHrConfig');
+      if (savedHrConfig) {
+        try {
+          const hrConfig = JSON.parse(savedHrConfig);
+          dispatch({ type: 'UPDATE_HR_CONFIG', payload: hrConfig });
+        } catch (error) {
+          console.error('Error loading HR config:', error);
+        }
       }
-    }
 
-    // Load device settings
-    const savedShowAllDevices = localStorage.getItem('bikeDataShowAllDevices');
-    if (savedShowAllDevices === 'true') {
-      dispatch({ type: 'TOGGLE_SHOW_ALL_DEVICES' });
-    }
+      // Sync device settings with Electron backend
+      if (window.electronAPI) {
+        try {
+          // Get current backend state for test mode and show all devices
+          const [testMode, showAllDevices] = await Promise.all([
+            window.electronAPI.getTestMode(),
+            window.electronAPI.getShowAllDevices()
+          ]);
 
-    const savedTestMode = localStorage.getItem('bikeDataTestMode');
-    if (savedTestMode === 'true') {
-      dispatch({ type: 'TOGGLE_TEST_MODE' });
-    }
+          // Update local state to match backend (use initial values instead of state)
+          if (testMode) {
+            dispatch({ type: 'SET_TEST_MODE', payload: testMode });
+          }
+          if (showAllDevices) {
+            dispatch({ type: 'SET_SHOW_ALL_DEVICES', payload: showAllDevices });
+          }
+        } catch (error) {
+          console.error('Error syncing with Electron backend:', error);
+          // Fallback to localStorage if backend sync fails
+          const savedShowAllDevices = localStorage.getItem('bikeDataShowAllDevices');
+          if (savedShowAllDevices === 'true') {
+            dispatch({ type: 'TOGGLE_SHOW_ALL_DEVICES' });
+          }
+
+          const savedTestMode = localStorage.getItem('bikeDataTestMode');
+          if (savedTestMode === 'true') {
+            dispatch({ type: 'TOGGLE_TEST_MODE' });
+          }
+        }
+      }
+    };
+
+    initializeApp();
   }, []);
 
   // Save configuration to localStorage when it changes
@@ -54,14 +78,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     localStorage.setItem('bikeDataTestMode', state.devices.testMode.toString());
   }, [state.devices.testMode]);
 
-  // Timer update effect
+  // Timer update effect - reduced frequency to prevent UI blocking
   useEffect(() => {
     let intervalId: NodeJS.Timeout | null = null;
     
     if (state.timer.isRunning) {
       intervalId = setInterval(() => {
         dispatch({ type: 'UPDATE_TIMER_DISPLAY' });
-      }, 100); // Update every 100ms for smooth display
+      }, 1000); // Update every 1 second to prevent blocking UI interactions
     }
 
     return () => {
