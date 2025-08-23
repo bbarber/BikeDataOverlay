@@ -1,0 +1,8 @@
+<div class="zone-option" data-zone="{{zoneId}}">
+    <input type="radio" id="zone{{zoneId}}" name="targetZone" value="{{zoneId}}" {{#if checked}}checked{{/if}}>
+    <label for="zone{{zoneId}}">
+        <span class="zone-name">{{zoneName}}</span>
+        <span class="zone-range" id="zone{{zoneId}}Range">{{zoneRange}}</span>
+        <span class="zone-desc">{{zoneDescription}}</span>
+    </label>
+</div>

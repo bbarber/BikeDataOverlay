@@ -15,6 +15,9 @@
 import './index.css';
 import { CyclingMetrics, ScanResult, ConnectionResult } from './types/CyclingMetrics';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
+import { componentLoader } from './utils/ComponentLoader.js';
+import { componentInitializer } from './utils/ComponentInitializer.js';
+import { calculateHRZones } from './config/HRZoneConfig.js';
 
 let updateInterval: NodeJS.Timeout | null = null;
 let settingsPanelVisible = false;
@@ -88,13 +91,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
 });
 
-function initializeApp(): void {
+async function initializeApp(): Promise<void> {
+  // Load all components first
+  await loadComponents();
+  
   // Start metrics updates
   startMetricsUpdates();
   
   // Initialize displays
   updateTimerDisplay();
-  loadHrConfig();
+  await loadHrConfig();
   loadShowAllDevicesState();
   loadTestModeState();
   initializeHrChart();
@@ -104,6 +110,26 @@ function initializeApp(): void {
   
   // Auto-start timer
   startTimer();
+}
+
+async function loadComponents(): Promise<void> {
+  try {
+    // Load settings panel component
+    await componentLoader.loadIntoContainer('settingsPanelContainer', 'settings-panel.template');
+    
+    // Load HR analytics panel component
+    await componentLoader.loadIntoContainer('hrAnalyticsPanelContainer', 'hr-analytics-panel.template');
+    
+    // Load timer controls component
+    await componentLoader.loadIntoContainer('timerControlsContainer', 'timer-controls.template');
+    
+    // Initialize dynamic components (HR zones, histogram bars, icons)
+    await componentInitializer.initializeComponents();
+    
+    console.log('✅ All components loaded successfully');
+  } catch (error) {
+    console.error('❌ Error loading components:', error);
+  }
 }
 
 function setupEventListeners(): void {
@@ -150,11 +176,11 @@ function setupEventListeners(): void {
   
   // Add event listeners for zone selection
   document.querySelectorAll('input[name="targetZone"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
+    radio.addEventListener('change', async (e) => {
       const target = e.target as HTMLInputElement;
       if (target.checked) {
         hrConfig.targetZone = parseInt(target.value);
-        updateHrZones();
+        await updateHrZones();
         saveHrConfig();
       }
     });
@@ -162,23 +188,23 @@ function setupEventListeners(): void {
   
   // Auto-update zones when age or resting HR changes
   const ageInput = document.getElementById('userAge') as HTMLInputElement;
-  ageInput?.addEventListener('input', (e) => {
+  ageInput?.addEventListener('input', async (e) => {
     const target = e.target as HTMLInputElement;
     const age = parseInt(target.value);
     if (age && age >= 18 && age <= 100) {
       hrConfig.age = age;
-      updateHrZones();
+      await updateHrZones();
       saveHrConfig();
     }
   });
   
   const restingHRInput = document.getElementById('restingHR') as HTMLInputElement;
-  restingHRInput?.addEventListener('input', (e) => {
+  restingHRInput?.addEventListener('input', async (e) => {
     const target = e.target as HTMLInputElement;
     const restingHR = parseInt(target.value);
     if (restingHR && restingHR >= 40 && restingHR <= 100) {
       hrConfig.restingHR = restingHR;
-      updateHrZones();
+      await updateHrZones();
       saveHrConfig();
     }
   });
@@ -402,51 +428,14 @@ function updateTimerButtonVisibility(): void {
   }
 }
 
-// HR Zone functions
-function calculateHrZones(age: number, restingHR: number = 60): any {
-  const maxHR = Math.round(208 - 0.7 * age);
-  const hrReserve = maxHR - restingHR;
-  
-  return {
-    zone1: {
-      min: Math.round(restingHR + hrReserve * 0.50),
-      max: Math.round(restingHR + hrReserve * 0.60),
-      name: 'Recovery',
-      desc: 'Active recovery, very light'
-    },
-    zone2: {
-      min: Math.round(restingHR + hrReserve * 0.60),
-      max: Math.round(restingHR + hrReserve * 0.70),
-      name: 'Aerobic',
-      desc: 'Fat burning, endurance'
-    },
-    zone3: {
-      min: Math.round(restingHR + hrReserve * 0.70),
-      max: Math.round(restingHR + hrReserve * 0.80),
-      name: 'Moderate',
-      desc: 'Aerobic fitness'
-    },
-    zone4: {
-      min: Math.round(restingHR + hrReserve * 0.80),
-      max: Math.round(restingHR + hrReserve * 0.90),
-      name: 'Hard',
-      desc: 'Lactate threshold'
-    },
-    zone5: {
-      min: Math.round(restingHR + hrReserve * 0.90),
-      max: maxHR,
-      name: 'Maximal',
-      desc: 'VO2 max, very hard'
-    }
-  };
-}
+// HR Zone functions removed - now using config/HRZoneConfig.ts
 
-function loadHrConfig(): void {
+async function loadHrConfig(): Promise<void> {
   const saved = localStorage.getItem('bikeDataHrConfig');
   if (saved) {
     hrConfig = { ...hrConfig, ...JSON.parse(saved) };
   }
-  updateHrZones();
+  await updateHrZones();
   updateHrInputs();
   updateTargetZoneSelection();
 }
@@ -456,8 +445,13 @@ function saveHrConfig(): void {
   console.log('HR config saved:', hrConfig);
 }
 
-function updateHrZones(): void {
-  hrZones = calculateHrZones(hrConfig.age, hrConfig.restingHR);
+async function updateHrZones(): Promise<void> {
+  hrZones = calculateHRZones(hrConfig.age, hrConfig.restingHR);
+  
+  // Update using the component initializer
+  await componentInitializer.updateHRZones(hrConfig.age, hrConfig.restingHR);
+  
+  // Keep the old display update as fallback
   updateHrZoneDisplay();
 }
 
@@ -481,7 +475,7 @@ function updateTargetZoneSelection(): void {
 
 function updateHrZoneDisplay(): void {
   for (let i = 1; i <= 5; i++) {
-    const zone = hrZones[`zone${i}`];
+    const zone = hrZones[i - 1]; // Array is 0-indexed
     const rangeElement = document.getElementById(`zone${i}Range`);
     if (rangeElement && zone) {
       rangeElement.textContent = `${zone.min}-${zone.max} BPM`;
@@ -491,7 +485,7 @@ function updateHrZoneDisplay(): void {
 
 function getHrZone(heartRate: number): { zone: number; name: string; inTarget: boolean } {
   for (let i = 1; i <= 5; i++) {
-    const zone = hrZones[`zone${i}`];
+    const zone = hrZones[i - 1]; // Array is 0-indexed
     if (heartRate >= zone.min && heartRate <= zone.max) {
       return { 
         zone: i, 
@@ -788,7 +782,7 @@ function updateHistogram(totalTime: number): void {
 
 function updateAnalyticsZoneRanges(): void {
   for (let i = 1; i <= 5; i++) {
-    const zone = hrZones[`zone${i}`];
+    const zone = hrZones[i - 1]; // Array is 0-indexed
     const rangeElement = document.getElementById(`analyticsZone${i}Range`);
     if (rangeElement && zone) {
       rangeElement.textContent = `${zone.min}-${zone.max} BPM`;
