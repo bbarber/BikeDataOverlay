@@ -50,7 +50,7 @@ export async function setupElectronTest() {
 /**
  * Wait for the app to be fully initialized
  */
-export async function waitForAppInitialization(window: any, containerSelector: string = '.overlay-container') {
+export async function waitForAppInitialization(window: { waitForSelector: (selector: string, options?: { timeout: number }) => Promise<void>; waitForTimeout: (ms: number) => Promise<void> }, containerSelector = '.overlay-container') {
   // Wait for app initialization and make sure core elements are present
   await window.waitForSelector(containerSelector, { timeout: 15000 });
   await window.waitForTimeout(3000); // Extra wait for app initialization and Bluetooth setup

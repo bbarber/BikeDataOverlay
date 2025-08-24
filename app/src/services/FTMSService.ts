@@ -172,7 +172,7 @@ export class FTMSService extends EventEmitter {
   /**
    * Create a control point command for stopping/pausing training
    */
-  createStopTrainingCommand(stopType: number = 1): Buffer {
+  createStopTrainingCommand(stopType = 1): Buffer {
     const buffer = Buffer.alloc(2);
     buffer.writeUInt8(0x08, 0);
     buffer.writeUInt8(stopType, 1);

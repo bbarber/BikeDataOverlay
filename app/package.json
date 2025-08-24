@@ -12,6 +12,9 @@
     "lint": "eslint --ext .ts,.tsx .",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
+    "test:unit": "jest",
+    "test:unit:watch": "jest --watch",
+    "test:unit:coverage": "jest --coverage",
     "postinstall": "@electron/rebuild"
   },
   "keywords": [],
@@ -33,19 +36,30 @@
     "@electron/rebuild": "^4.0.1",
     "@playwright/test": "^1.54.2",
     "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
+    "@vitejs/plugin-react": "^5.0.1",
     "electron": "37.3.1",
     "eslint": "^8.57.1",
     "eslint-plugin-import": "^2.32.0",
+    "jest": "^30.0.5",
     "playwright": "^1.54.2",
-    "typescript": "~4.5.4",
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.9.2",
     "vite": "^5.4.19"
   },
   "dependencies": {
     "@stoprocent/noble": "^2.3.4",
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
+    "chart.js": "^4.4.0",
+    "chartjs-adapter-date-fns": "^3.0.0",
     "chokidar": "^4.0.3",
+    "date-fns": "^4.1.0",
     "electron-squirrel-startup": "^1.0.1",
-    "chart.js": "^4.4.0"
+    "immer": "^10.1.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   }
 }

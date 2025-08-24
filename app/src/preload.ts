@@ -1,7 +1,7 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { CyclingMetrics, ScanResult, ConnectionResult, ConnectionStatus } from './types/CyclingMetrics';
 
 // Expose protected methods that allow the renderer process to use
@@ -22,13 +22,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Event listeners
   onMetricsUpdate: (callback: (metrics: CyclingMetrics) => void) => {
-    const subscription = (event: any, metrics: CyclingMetrics) => callback(metrics);
+    const subscription = (event: IpcRendererEvent, metrics: CyclingMetrics) => callback(metrics);
     ipcRenderer.on('metrics-update', subscription);
     return () => ipcRenderer.removeListener('metrics-update', subscription);
   },
   
   onConnectionStatusChanged: (callback: (status: { isConnected: boolean; deviceName: string | null }) => void) => {
-    const subscription = (event: any, status: { isConnected: boolean; deviceName: string | null }) => callback(status);
+    const subscription = (event: IpcRendererEvent, status: { isConnected: boolean; deviceName: string | null }) => callback(status);
     ipcRenderer.on('connection-status-changed', subscription);
     return () => ipcRenderer.removeListener('connection-status-changed', subscription);
   }

@@ -113,7 +113,7 @@ test.describe('Timer Functionality Tests', () => {
     await window.waitForTimeout(1500);
     
     // Verify time has elapsed
-    let timeText = await window.locator('#totalTime').textContent();
+    const timeText = await window.locator('#totalTime').textContent();
     expect(timeText).not.toBe('00:00');
     
     // Reset the timer

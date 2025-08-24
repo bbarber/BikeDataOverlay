@@ -5,6 +5,10 @@ import started from 'electron-squirrel-startup';
 import { BluetoothService } from './services/BluetoothService';
 import { CyclingMetrics, ScanResult, ConnectionResult, ConnectionStatus } from './types/CyclingMetrics';
 
+// Declare global variables for Vite environment
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
@@ -110,11 +114,11 @@ ipcMain.handle('scan-and-connect', async (): Promise<ConnectionResult> => {
       deviceName: status?.deviceName || undefined,
       message: success ? 'Successfully connected to trainer' : 'Failed to connect to trainer'
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       isConnected: false,
-      message: `Connection error: ${error.message}`
+      message: `Connection error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 });
@@ -130,11 +134,11 @@ ipcMain.handle('connect-to-device', async (event, deviceId: string): Promise<Con
       connectedDevices: bluetoothService?.getConnectedDevicesCount() || 0,
       message: success ? 'Successfully connected to device' : `Failed to connect to device ${deviceId}`
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       isConnected: false,
-      message: `Connection error: ${error.message}`
+      message: `Connection error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 });
@@ -147,16 +151,16 @@ ipcMain.handle('disconnect', async (): Promise<ConnectionResult> => {
       isConnected: false,
       message: 'Disconnected from trainer'
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       isConnected: false,
-      message: `Disconnect error: ${error.message}`
+      message: `Disconnect error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 });
 
-ipcMain.handle('scan-for-devices', async (event, timeoutSeconds: number = 15): Promise<ScanResult> => {
+ipcMain.handle('scan-for-devices', async (event, timeoutSeconds = 15): Promise<ScanResult> => {
   try {
     const timeout = Math.min(Math.max(timeoutSeconds, 5), 60) * 1000;
     const devices = await bluetoothService?.scanForDevices(timeout) || [];
@@ -171,13 +175,13 @@ ipcMain.handle('scan-for-devices', async (event, timeoutSeconds: number = 15): P
       scanTimeout: timeoutSeconds,
       message: `Found ${devices.length} ${deviceTypeText}`
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       deviceCount: 0,
       devices: [],
       scanTimeout: timeoutSeconds,
-      message: `Scan error: ${error.message}`
+      message: `Scan error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 });
@@ -207,12 +211,12 @@ ipcMain.handle('list-devices', async (): Promise<ScanResult> => {
         ? `Found ${deviceList.length} ${deviceTypeText}`
         : `No ${deviceTypeText} found. Make sure your devices are turned on and in pairing mode.`
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       deviceCount: 0,
       devices: [],
-      message: `Device listing error: ${error.message}`
+      message: `Device listing error: ${error instanceof Error ? error.message : String(error)}`
     };
   }
 });

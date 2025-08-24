@@ -2,3 +2,5 @@
 - Update exe name
 - Fix issue where mouse can't click through transparent areas
 - Color code the hr line chart to match the histogram zone colors
+- Get a better svg for HR stats
+- Update reducer to use immer to clean it up

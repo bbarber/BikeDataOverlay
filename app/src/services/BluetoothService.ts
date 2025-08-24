@@ -1,7 +1,27 @@
 import noble from '@stoprocent/noble';
 import { EventEmitter } from 'events';
 import { FTMSService } from './FTMSService';
-import { CyclingMetrics, BluetoothDevice } from '../types/CyclingMetrics';
+import { CyclingMetrics, BluetoothDevice, DeviceInfo } from '../types/CyclingMetrics';
+
+interface NobleInterface {
+  state: string;
+  startScanningAsync(serviceUuids?: string[], allowDuplicates?: boolean): Promise<void>;
+  stopScanningAsync(): Promise<void>;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  removeAllListeners(event?: string): void;
+}
+
+interface NobleService {
+  uuid: string;
+  discoverCharacteristics(serviceUuids: string[], callback: (error: Error | null, characteristics?: unknown[]) => void): void;
+}
+
+interface NobleCharacteristic {
+  uuid: string;
+  properties: string[];
+  subscribe(callback: (error: Error | null) => void): void;
+  on(event: string, listener: (data: Buffer) => void): void;
+}
 
 interface NoblePeripheral {
   id: string;
@@ -13,8 +33,8 @@ interface NoblePeripheral {
   state: string;
   connect(callback: (error?: Error) => void): void;
   disconnect(callback?: (error?: Error) => void): void;
-  discoverServices(serviceUuids: string[], callback: (error?: Error, services?: any[]) => void): void;
-  on(event: string, listener: (...args: any[]) => void): void;
+  discoverServices(serviceUuids: string[], callback: (error?: Error, services?: unknown[]) => void): void;
+  on(event: string, listener: (...args: unknown[]) => void): void;
 }
 
 interface DiscoveredDevice {
@@ -22,7 +42,7 @@ interface DiscoveredDevice {
   name: string;
   peripheral: NoblePeripheral;
   isConnected: boolean;
-  deviceInfo: any;
+  deviceInfo: DeviceInfo;
   services: string[];
 }
 
@@ -102,7 +122,7 @@ export class BluetoothService extends EventEmitter {
         name: deviceName,
         peripheral: peripheral,
         isConnected: false,
-        deviceInfo: null,
+        deviceInfo: {},
         services: peripheral.advertisement.serviceUuids
       };
       
@@ -130,7 +150,7 @@ export class BluetoothService extends EventEmitter {
           name: deviceName,
           peripheral: peripheral,
           isConnected: false,
-          deviceInfo: null,
+          deviceInfo: {},
           services: peripheral.advertisement.serviceUuids
         };
         
@@ -139,10 +159,11 @@ export class BluetoothService extends EventEmitter {
     }
   }
 
-  async scanForDevices(timeoutMs: number = 15000): Promise<BluetoothDevice[]> {
+  async scanForDevices(timeoutMs = 15000): Promise<BluetoothDevice[]> {
     return new Promise((resolve, reject) => {
-      if ((noble as any).state !== 'poweredOn') {
-        reject(new Error(`Bluetooth not ready. State: ${(noble as any).state}`));
+      const nobleInterface = noble as unknown as NobleInterface;
+      if (nobleInterface.state !== 'poweredOn') {
+        reject(new Error(`Bluetooth not ready. State: ${nobleInterface.state}`));
         return;
       }
 
@@ -174,7 +195,8 @@ export class BluetoothService extends EventEmitter {
           name: device.name,
           isConnected: device.isConnected,
           deviceInfo: device.deviceInfo,
-          services: device.services
+          services: device.services,
+          rssi: '0' // Default value as string
         }));
         console.log(`Scan completed. Found ${devices.length} fitness devices.`);
         resolve(devices);
@@ -245,7 +267,7 @@ export class BluetoothService extends EventEmitter {
 
   private async setupDeviceServices(device: DiscoveredDevice): Promise<void> {
     return new Promise((resolve, reject) => {
-      device.peripheral.discoverServices([], (error: any, services?: any[]) => {
+      device.peripheral.discoverServices([], (error?: Error, services?: unknown[]) => {
         if (error) {
           reject(error);
           return;
@@ -259,16 +281,16 @@ export class BluetoothService extends EventEmitter {
         console.log(`Discovered ${services.length} services for ${device.name}`);
         
         const ftmsService = services.find(service => 
-          service.uuid === '1826' || service.uuid.toLowerCase().includes('1826')
+          (service as NobleService).uuid === '1826' || (service as NobleService).uuid.toLowerCase().includes('1826')
         );
 
         if (ftmsService) {
           console.log(`Found FTMS service on ${device.name}`);
           this.setupFTMSService(device, ftmsService).then(resolve).catch(reject);
         } else {
-          const powerService = services.find(service => service.uuid === '1818');
-          const heartRateService = services.find(service => service.uuid === '180d');
-          const speedCadenceService = services.find(service => service.uuid === '1816');
+          const powerService = services.find(service => (service as NobleService).uuid === '1818');
+          const heartRateService = services.find(service => (service as NobleService).uuid === '180d');
+          const speedCadenceService = services.find(service => (service as NobleService).uuid === '1816');
           
           if (heartRateService) {
             console.log(`Found Heart Rate service on ${device.name}`);
@@ -285,24 +307,29 @@ export class BluetoothService extends EventEmitter {
     });
   }
 
-  private async setupFTMSService(device: DiscoveredDevice, ftmsService: any): Promise<void> {
+  private async setupFTMSService(device: DiscoveredDevice, ftmsService: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      ftmsService.discoverCharacteristics([], (error: any, characteristics: any[]) => {
+      (ftmsService as NobleService).discoverCharacteristics([], (error: Error | null, characteristics?: unknown[]) => {
         if (error) {
           reject(error);
+          return;
+        }
+
+        if (!characteristics) {
+          resolve();
           return;
         }
 
         console.log(`Found ${characteristics.length} FTMS characteristics for ${device.name}`);
         
         const indoorBikeDataChar = characteristics.find(char => 
-          char.uuid === '2ad2' || char.uuid.toLowerCase().includes('2ad2')
+          (char as NobleCharacteristic).uuid === '2ad2' || (char as NobleCharacteristic).uuid.toLowerCase().includes('2ad2')
         );
 
-        if (indoorBikeDataChar && indoorBikeDataChar.properties.includes('notify')) {
+        if (indoorBikeDataChar && (indoorBikeDataChar as NobleCharacteristic).properties.includes('notify')) {
           console.log(`Setting up Indoor Bike Data notifications for ${device.name}`);
           
-          indoorBikeDataChar.on('data', (data: Buffer) => {
+          (indoorBikeDataChar as NobleCharacteristic).on('data', (data: Buffer) => {
             const metrics = this.ftmsService.parseIndoorBikeData(data);
             if (metrics) {
               this.currentMetrics = {
@@ -314,7 +341,7 @@ export class BluetoothService extends EventEmitter {
             }
           });
 
-          indoorBikeDataChar.subscribe((subscribeError: any) => {
+          (indoorBikeDataChar as NobleCharacteristic).subscribe((subscribeError: Error | null) => {
             if (subscribeError) {
               console.error(`Failed to subscribe to FTMS notifications:`, subscribeError);
               reject(subscribeError);
@@ -331,24 +358,29 @@ export class BluetoothService extends EventEmitter {
     });
   }
 
-  private async setupHeartRateService(device: DiscoveredDevice, heartRateService: any): Promise<void> {
+  private async setupHeartRateService(device: DiscoveredDevice, heartRateService: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      heartRateService.discoverCharacteristics([], (error: any, characteristics: any[]) => {
+      (heartRateService as NobleService).discoverCharacteristics([], (error: Error | null, characteristics?: unknown[]) => {
         if (error) {
           reject(error);
+          return;
+        }
+
+        if (!characteristics) {
+          resolve();
           return;
         }
 
         console.log(`Found ${characteristics.length} Heart Rate characteristics for ${device.name}`);
         
         const heartRateMeasurementChar = characteristics.find(char => 
-          char.uuid === '2a37' || char.uuid.toLowerCase().includes('2a37')
+          (char as NobleCharacteristic).uuid === '2a37' || (char as NobleCharacteristic).uuid.toLowerCase().includes('2a37')
         );
 
-        if (heartRateMeasurementChar && heartRateMeasurementChar.properties.includes('notify')) {
+        if (heartRateMeasurementChar && (heartRateMeasurementChar as NobleCharacteristic).properties.includes('notify')) {
           console.log(`Setting up Heart Rate Measurement notifications for ${device.name}`);
           
-          heartRateMeasurementChar.on('data', (data: Buffer) => {
+          (heartRateMeasurementChar as NobleCharacteristic).on('data', (data: Buffer) => {
             const heartRate = this.parseHeartRateData(data);
             if (heartRate > 0) {
               this.currentMetrics = {
@@ -361,7 +393,7 @@ export class BluetoothService extends EventEmitter {
             }
           });
 
-          heartRateMeasurementChar.subscribe((subscribeError: any) => {
+          (heartRateMeasurementChar as NobleCharacteristic).subscribe((subscribeError: Error | null) => {
             if (subscribeError) {
               console.error(`Failed to subscribe to Heart Rate notifications:`, subscribeError);
               reject(subscribeError);
@@ -449,8 +481,8 @@ export class BluetoothService extends EventEmitter {
         console.log('Failed to connect to device.');
         return false;
       }
-    } catch (error: any) {
-      console.error('Real connection failed:', error.message);
+    } catch (error) {
+      console.error('Real connection failed:', error instanceof Error ? error.message : String(error));
       return false;
     }
   }
@@ -474,7 +506,7 @@ export class BluetoothService extends EventEmitter {
         noble.stopScanning();
       }
 
-      for (const [deviceId, device] of this.connectedDevices) {
+      for (const [, device] of this.connectedDevices) {
         try {
           if (device.peripheral && device.peripheral.state === 'connected') {
             console.log(`Disconnecting from ${device.name}`);

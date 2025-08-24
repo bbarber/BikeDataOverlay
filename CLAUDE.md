@@ -22,9 +22,20 @@
 cd app && npm install
 cd app && npm start
 
-# Testing
-cd app && npm test
-cd app && npm test  # if separate frontend
+# Unit Testing (Jest)
+cd app && npm run test:unit            # Run all unit tests
+cd app && npm run test:unit:watch      # Run tests in watch mode
+cd app && npm run test:unit:coverage   # Run tests with coverage report
+
+# Run specific unit test file
+cd app && npx jest histogram-calculations.test.ts
+
+# Run specific test by pattern
+cd app && npx jest --testNamePattern="should calculate correct percentages"
+
+# Integration Testing (Playwright)
+cd app && npm test                     # Run all Playwright tests
+cd app && npm run test:ui              # Run Playwright tests with UI
 
 # Individual Playwright Tests
 # Run specific test file
@@ -38,6 +49,9 @@ npx playwright test --reporter=line
 
 # List all available tests
 npx playwright test --list
+
+# Linting
+cd app && npm run lint                  # Check code style and errors
 ```
 
 ## ARCHITECTURE
@@ -45,5 +59,5 @@ npx playwright test --list
 - **Frontend**: Electron app with native BLE support via @abandonware/noble
 - **BLE Service**: Main process BLE handling with IPC communication
 - **Services**: BluetoothService for device communication, FTMSService for protocol parsing
-- **Testing**: Playwright for UI testing, manual BLE device testing
+- **Testing**: Jest for unit tests, Playwright for UI testing, manual BLE device testing
 
