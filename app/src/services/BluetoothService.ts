@@ -11,6 +11,15 @@ interface NobleInterface {
   removeAllListeners(event?: string): void;
 }
 
+interface NobleBluetoothService {
+  discoverCharacteristics(serviceUuids: string[], callback: (error: Error | null, characteristics?: unknown[]) => void): void;
+}
+
+interface BluetoothCharacteristic {
+  subscribe(callback: (error: Error | null) => void): void;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+}
+
 interface NoblePeripheral {
   id: string;
   advertisement: {
@@ -296,7 +305,7 @@ export class BluetoothService extends EventEmitter {
 
   private async setupFTMSService(device: DiscoveredDevice, ftmsService: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      (ftmsService as any).discoverCharacteristics([], (error: Error | null, characteristics: unknown[]) => {
+      (ftmsService as NobleBluetoothService).discoverCharacteristics([], (error: Error | null, characteristics: unknown[]) => {
         if (error) {
           reject(error);
           return;
@@ -323,7 +332,7 @@ export class BluetoothService extends EventEmitter {
             }
           });
 
-          (indoorBikeDataChar as any).subscribe((subscribeError: Error | null) => {
+          (indoorBikeDataChar as BluetoothCharacteristic).subscribe((subscribeError: Error | null) => {
             if (subscribeError) {
               console.error(`Failed to subscribe to FTMS notifications:`, subscribeError);
               reject(subscribeError);
@@ -342,7 +351,7 @@ export class BluetoothService extends EventEmitter {
 
   private async setupHeartRateService(device: DiscoveredDevice, heartRateService: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      (heartRateService as any).discoverCharacteristics([], (error: Error | null, characteristics: unknown[]) => {
+      (heartRateService as NobleBluetoothService).discoverCharacteristics([], (error: Error | null, characteristics: unknown[]) => {
         if (error) {
           reject(error);
           return;
@@ -370,7 +379,7 @@ export class BluetoothService extends EventEmitter {
             }
           });
 
-          (heartRateMeasurementChar as any).subscribe((subscribeError: Error | null) => {
+          (heartRateMeasurementChar as BluetoothCharacteristic).subscribe((subscribeError: Error | null) => {
             if (subscribeError) {
               console.error(`Failed to subscribe to Heart Rate notifications:`, subscribeError);
               reject(subscribeError);
