@@ -26,6 +26,15 @@ const HRZoneHistogram: React.FC = () => {
       const displayPercentage = percentage > 0 && percentage < 0.1 ? 0.1 : Math.round(percentage * 10) / 10;
       const barHeight = percentage > 0 ? Math.max(3, percentage) : 0;
       
+      console.log('Zone:', zone);
+      console.log('Zone Time:', zoneTime);
+      console.log('Percentage:', percentage);
+      console.log('Display Percentage:', displayPercentage);
+      console.log('Bar Height:', barHeight);
+      console.log('Zone Config:', zoneConfig);
+      console.log('Range:', formatZoneRange(zoneConfig));
+      console.log('Formatted Time:', formatTime(Math.floor(zoneTime / 1000)));
+
       return {
         ...zone,
         time: zoneTime,

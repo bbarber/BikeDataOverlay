@@ -7,6 +7,12 @@ export const useMetricsStream = () => {
   const { state, dispatch } = useAppState();
   const lastZoneUpdate = useRef<number>(0);
   const currentZone = useRef<number>(1);
+  const hrConfigRef = useRef(state.hrConfig);
+  const stateRef = useRef(state);
+
+  // Update refs when state changes
+  hrConfigRef.current = state.hrConfig;
+  stateRef.current = state;
 
   useEffect(() => {
     // Start a metrics update interval for fallback data
@@ -20,8 +26,8 @@ export const useMetricsStream = () => {
           if (metrics.heartRate && metrics.heartRate > 0) {
             const zone = getHRZone(
               metrics.heartRate, 
-              state.hrConfig.age, 
-              state.hrConfig.restingHR
+              hrConfigRef.current.age, 
+              hrConfigRef.current.restingHR
             );
             
             // Add HR data point
@@ -40,19 +46,31 @@ export const useMetricsStream = () => {
             if (lastZoneUpdate.current === 0) {
               lastZoneUpdate.current = now;
               currentZone.current = zone;
+              
+              // Update HR analytics for initial state
+              dispatch({ 
+                type: 'UPDATE_HR_ANALYTICS', 
+                payload: { 
+                  currentZone: zone, 
+                  hasValidHeartRate: true 
+                } 
+              });
             } else {
               // Update time spent in current zone (whether zone changed or not)
               const timeSpent = now - lastZoneUpdate.current;
-              const zoneKey = `zone${currentZone.current}` as keyof typeof state.hrAnalytics.zoneTimes;
-              const currentZoneTime = state.hrAnalytics.zoneTimes[zoneKey];
+              const zoneKey = `zone${currentZone.current}` as keyof typeof stateRef.current.hrAnalytics.zoneTimes;
+              const currentZoneTime = stateRef.current.hrAnalytics.zoneTimes[zoneKey];
               
+              // Single dispatch with all updates combined
               dispatch({ 
                 type: 'UPDATE_HR_ANALYTICS', 
                 payload: { 
                   zoneTimes: {
-                    ...state.hrAnalytics.zoneTimes,
+                    ...stateRef.current.hrAnalytics.zoneTimes,
                     [zoneKey]: currentZoneTime + timeSpent
-                  }
+                  },
+                  currentZone: zone, 
+                  hasValidHeartRate: true 
                 } 
               });
               
@@ -62,15 +80,6 @@ export const useMetricsStream = () => {
               }
               lastZoneUpdate.current = now;
             }
-            
-            // Update HR analytics
-            dispatch({ 
-              type: 'UPDATE_HR_ANALYTICS', 
-              payload: { 
-                currentZone: zone, 
-                hasValidHeartRate: true 
-              } 
-            });
           }
         }
       } catch (error) {
@@ -81,5 +90,5 @@ export const useMetricsStream = () => {
     return () => {
       clearInterval(metricsInterval);
     };
-  }, [dispatch, state.hrConfig.age, state.hrConfig.restingHR]);
+  }, [dispatch]);
 };
