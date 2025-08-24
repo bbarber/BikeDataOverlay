@@ -139,7 +139,7 @@ export class BluetoothService extends EventEmitter {
     }
   }
 
-  async scanForDevices(timeoutMs: number = 15000): Promise<BluetoothDevice[]> {
+  async scanForDevices(timeoutMs = 15000): Promise<BluetoothDevice[]> {
     return new Promise((resolve, reject) => {
       if ((noble as any).state !== 'poweredOn') {
         reject(new Error(`Bluetooth not ready. State: ${(noble as any).state}`));
@@ -474,7 +474,7 @@ export class BluetoothService extends EventEmitter {
         noble.stopScanning();
       }
 
-      for (const [deviceId, device] of this.connectedDevices) {
+      for (const [, device] of this.connectedDevices) {
         try {
           if (device.peripheral && device.peripheral.state === 'connected') {
             console.log(`Disconnecting from ${device.name}`);

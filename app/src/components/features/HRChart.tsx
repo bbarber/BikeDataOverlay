@@ -25,7 +25,7 @@ const HRChart: React.FC = () => {
 
     // Prepare chart data
     const chartData = state.hrDataPoints.slice(-100).map((point) => ({
-      x: new Date(point.timestamp),
+      x: point.timestamp,
       y: point.heartRate,
     }));
     const config: ChartConfiguration = {

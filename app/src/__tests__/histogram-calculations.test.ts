@@ -172,9 +172,6 @@ describe('Histogram Calculations', () => {
       const restingHR = 60;
       const zones = calculateHRZones(age, restingHR);
 
-      const maxHR = 220 - age; // 190
-      const hrReserve = maxHR - restingHR; // 130
-
       expect(zones).toHaveLength(5);
       
       // Zone 1: 50-60% = 60 + (130 * 0.5) to 60 + (130 * 0.6) = 125 to 138

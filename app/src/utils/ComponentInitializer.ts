@@ -2,8 +2,8 @@
  * Component initialization utilities
  */
 
-import { componentLoader, type TemplateData } from './ComponentLoader.js';
-import { HR_ZONES, calculateHRZones, formatZoneRange, DEFAULT_HR_CONFIG } from '../config/HRZoneConfig.js';
+import { componentLoader, type TemplateData } from './ComponentLoader';
+import { HR_ZONES, calculateHRZones, formatZoneRange, DEFAULT_HR_CONFIG } from '../config/HRZoneConfig';
 
 export class ComponentInitializer {
   

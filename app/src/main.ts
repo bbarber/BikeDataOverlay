@@ -156,7 +156,7 @@ ipcMain.handle('disconnect', async (): Promise<ConnectionResult> => {
   }
 });
 
-ipcMain.handle('scan-for-devices', async (event, timeoutSeconds: number = 15): Promise<ScanResult> => {
+ipcMain.handle('scan-for-devices', async (event, timeoutSeconds = 15): Promise<ScanResult> => {
   try {
     const timeout = Math.min(Math.max(timeoutSeconds, 5), 60) * 1000;
     const devices = await bluetoothService?.scanForDevices(timeout) || [];

@@ -49,6 +49,9 @@ npx playwright test --reporter=line
 
 # List all available tests
 npx playwright test --list
+
+# Linting
+cd app && npm run lint                  # Check code style and errors
 ```
 
 ## ARCHITECTURE

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useAppState } from '../../store/AppContext';
 import { useElectronAPI } from '../../hooks/useElectronAPI';
 import { useMetricsStream } from '../../hooks/useMetricsStream';
@@ -9,8 +9,7 @@ import Icon from '../ui/Icon';
 import TimerControls from '../features/TimerControls';
 import SettingsPanel from '../features/SettingsPanel';
 import AnalyticsPanel from '../features/AnalyticsPanel';
-import { formatTime } from '../../config/HRZoneConfig';
-import { getHRZone } from '../../config/HRZoneConfig';
+import { formatTime, getHRZone } from '../../config/HRZoneConfig';
 
 const MainLayout: React.FC = () => {
   const { state, dispatch } = useAppState();
@@ -50,6 +49,25 @@ const MainLayout: React.FC = () => {
     return state.metrics.heartRate || '--';
   }, [state.metrics.heartRate]);
 
+  // Determine if current HR is in target zone
+  const isInTargetZone = useMemo(() => {
+    if (!state.metrics.heartRate) return false;
+    
+    const currentZone = getHRZone(
+      state.metrics.heartRate,
+      state.hrConfig.age,
+      state.hrConfig.restingHR
+    );
+    
+    return currentZone === state.hrConfig.targetZone;
+  }, [state.metrics.heartRate, state.hrConfig.age, state.hrConfig.restingHR, state.hrConfig.targetZone]);
+
+  // Generate CSS class for HR value based on zone status
+  const heartRateClass = useMemo(() => {
+    if (!state.metrics.heartRate) return '';
+    return isInTargetZone ? 'hr-in-zone' : 'hr-out-of-zone';
+  }, [state.metrics.heartRate, isInTargetZone]);
+
   return (
     <div className="app">
       {/* Watts Display Container */}
@@ -76,6 +94,7 @@ const MainLayout: React.FC = () => {
           label="BPM"
           extraLabel={hrZoneDisplay}
           extraLabelId="hrZoneLabel"
+          valueClassName={heartRateClass}
         />
         
         <Button 

@@ -9,7 +9,7 @@ export const initialState: AppState = {
     cadence: 0,
     speed: 0,
     distance: 0,
-    timestamp: Date.now()
+    timestamp: new Date().toISOString()
   },
   timer: {
     startTime: null,
@@ -78,7 +78,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         draft.hrDataPoints = [];
         break;
 
-      case 'UPDATE_TIMER_DISPLAY':
+      case 'UPDATE_TIMER_DISPLAY': {
         if (!draft.timer.isRunning) break;
         const newElapsedTime = draft.timer.startTime 
           ? Date.now() - draft.timer.startTime 
@@ -91,12 +91,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         
         draft.timer.elapsedTime = newElapsedTime;
         break;
+      }
 
       case 'UPDATE_HR_CONFIG':
         Object.assign(draft.hrConfig, action.payload);
         break;
 
-      case 'TOGGLE_SETTINGS_PANEL':
+      case 'TOGGLE_SETTINGS_PANEL': {
         const newSettingsVisible = !draft.ui.settingsPanelVisible;
         draft.ui.settingsPanelVisible = newSettingsVisible;
         // Close analytics panel when opening settings
@@ -104,12 +105,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           draft.ui.analyticsVisible = false;
         }
         break;
+      }
 
       case 'CLOSE_SETTINGS_PANEL':
         draft.ui.settingsPanelVisible = false;
         break;
 
-      case 'TOGGLE_ANALYTICS_PANEL':
+      case 'TOGGLE_ANALYTICS_PANEL': {
         const newAnalyticsVisible = !draft.ui.analyticsVisible;
         draft.ui.analyticsVisible = newAnalyticsVisible;
         // Close settings panel when opening analytics
@@ -117,6 +119,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           draft.ui.settingsPanelVisible = false;
         }
         break;
+      }
 
       case 'CLOSE_ANALYTICS_PANEL':
         draft.ui.analyticsVisible = false;

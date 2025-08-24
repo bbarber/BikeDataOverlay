@@ -69,7 +69,7 @@ export const DEFAULT_HR_CONFIG: HRConfig = {
 /**
  * Calculate heart rate zones based on age and resting heart rate
  */
-export function calculateHRZones(age: number, restingHR: number = 60) {
+export function calculateHRZones(age: number, restingHR = 60) {
   const maxHR = 220 - age;
   const hrReserve = maxHR - restingHR;
   
@@ -83,7 +83,7 @@ export function calculateHRZones(age: number, restingHR: number = 60) {
 /**
  * Get zone number for a given heart rate
  */
-export function getHRZone(heartRate: number, age: number, restingHR: number = 60): number {
+export function getHRZone(heartRate: number, age: number, restingHR = 60): number {
   const zones = calculateHRZones(age, restingHR);
   
   for (let i = 0; i < zones.length; i++) {

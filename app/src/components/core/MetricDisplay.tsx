@@ -6,6 +6,7 @@ interface MetricDisplayProps {
   extraLabel?: string;
   extraLabelId?: string;
   extraLabelClass?: string;
+  valueClassName?: string;
 }
 
 const MetricDisplay: React.FC<MetricDisplayProps> = memo(({ 
@@ -13,11 +14,12 @@ const MetricDisplay: React.FC<MetricDisplayProps> = memo(({
   label, 
   extraLabel,
   extraLabelId,
-  extraLabelClass = 'hr-zone-label'
+  extraLabelClass = 'hr-zone-label',
+  valueClassName
 }) => {
   return (
     <div className="metric-display">
-      <div className="metric-value">
+      <div className={`metric-value ${valueClassName || ''}`}>
         {value}
       </div>
       <div className="metric-label">
