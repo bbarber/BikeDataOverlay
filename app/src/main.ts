@@ -5,6 +5,10 @@ import started from 'electron-squirrel-startup';
 import { BluetoothService } from './services/BluetoothService';
 import { CyclingMetrics, ScanResult, ConnectionResult, ConnectionStatus } from './types/CyclingMetrics';
 
+// Declare global variables for Vite environment
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();

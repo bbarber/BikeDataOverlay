@@ -14,7 +14,7 @@ export const useDeviceManager = () => {
       if (result.success) {
         console.log('Scan started successfully');
       } else {
-        console.error('Scan failed:', result.error);
+        console.error('Scan failed:', result.message);
       }
     } catch (error) {
       console.error('Error starting scan:', error);
@@ -28,8 +28,12 @@ export const useDeviceManager = () => {
 
   const refreshDeviceList = useCallback(async () => {
     try {
-      const devices = await electronAPI.getDeviceList();
-      dispatch({ type: 'UPDATE_DEVICE_LIST', payload: devices });
+      const result = await electronAPI.getDeviceList();
+      if (result.success) {
+        dispatch({ type: 'UPDATE_DEVICE_LIST', payload: result.devices });
+      } else {
+        console.error('Failed to get device list:', result.message);
+      }
     } catch (error) {
       console.error('Error refreshing device list:', error);
     }
@@ -43,7 +47,7 @@ export const useDeviceManager = () => {
         // Refresh device list to update connection status
         await refreshDeviceList();
       } else {
-        console.error('Connection failed:', result.error);
+        console.error('Connection failed:', result.message);
       }
     } catch (error) {
       console.error('Error connecting to device:', error);
@@ -57,7 +61,7 @@ export const useDeviceManager = () => {
         console.log('Disconnected from device');
         await refreshDeviceList();
       } else {
-        console.error('Disconnection failed:', result.error);
+        console.error('Disconnection failed:', result.message);
       }
     } catch (error) {
       console.error('Error disconnecting from device:', error);
