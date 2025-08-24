@@ -1,7 +1,0 @@
-<div class="metric-display">
-    <div class="metric-value" id="{{valueId}}">{{defaultValue}}</div>
-    <div class="metric-label">{{label}}</div>
-    {{#if extraLabel}}
-    <div class="{{extraLabelClass}}" id="{{extraLabelId}}">{{extraLabel}}</div>
-    {{/if}}
-</div>
