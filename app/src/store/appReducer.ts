@@ -8,7 +8,6 @@ export const initialState: AppState = {
     heartRate: 0,
     cadence: 0,
     speed: 0,
-    distance: 0,
     timestamp: new Date().toISOString()
   },
   timer: {

@@ -1,4 +1,4 @@
-import { CyclingMetrics } from './CyclingMetrics';
+import { CyclingMetrics, BluetoothDevice } from './CyclingMetrics';
 
 // Timer State
 export interface TimerState {
@@ -40,7 +40,7 @@ export interface DeviceState {
   isScanning: boolean;
   showAllDevices: boolean;
   testMode: boolean;
-  deviceList: any[];
+  deviceList: BluetoothDevice[];
   connectedDevice: string | null;
 }
 
@@ -81,6 +81,6 @@ export type AppAction =
   | { type: 'SET_TEST_MODE'; payload: boolean }
   | { type: 'START_SCANNING' }
   | { type: 'STOP_SCANNING' }
-  | { type: 'UPDATE_DEVICE_LIST'; payload: any[] }
+  | { type: 'UPDATE_DEVICE_LIST'; payload: BluetoothDevice[] }
   | { type: 'UPDATE_HR_ANALYTICS'; payload: Partial<HRZoneAnalytics> }
   | { type: 'ADD_HR_DATA_POINT'; payload: HRDataPoint };

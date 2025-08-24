@@ -19,7 +19,11 @@ const HRZoneHistogram: React.FC = () => {
     return HR_ZONES.map((zone) => {
       const zoneTime = state.hrAnalytics.zoneTimes[`zone${zone.id}` as keyof typeof state.hrAnalytics.zoneTimes];
       const percentage = totalTime > 0 ? (zoneTime / totalTime) * 100 : 0;
-      const zoneConfig = hrZones.find(z => z.id === zone.id)!;
+      const zoneConfig = hrZones.find(z => z.id === zone.id);
+      
+      if (!zoneConfig) {
+        throw new Error(`Zone configuration not found for zone ${zone.id}`);
+      }
       
       const displayPercentage = Math.round(percentage);
       const barHeight = Math.max(9, percentage); // Minimum bar height for visibility

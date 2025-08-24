@@ -20,6 +20,7 @@ export interface BluetoothDevice {
   isConnected: boolean;
   deviceInfo?: DeviceInfo;
   services?: string[];
+  rssi: string;
 }
 
 export interface ScanResult {

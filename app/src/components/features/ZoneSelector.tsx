@@ -17,7 +17,8 @@ const ZoneSelector: React.FC = () => {
   return (
     <div className="zone-selector">
       {HR_ZONES.map((zone) => {
-        const zoneData = hrZones.find(z => z.id === zone.id)!;
+        const zoneData = hrZones.find(z => z.id === zone.id);
+        if (!zoneData) return null;
         const isChecked = state.hrConfig.targetZone === zone.id;
         
         return (

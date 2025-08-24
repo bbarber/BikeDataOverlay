@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDeviceManager } from '../../hooks/useDeviceManager';
 import Button from '../ui/Button';
+import { BluetoothDevice } from '../../types/CyclingMetrics';
 
 const DeviceList: React.FC = () => {
   const { devices, connectToDevice } = useDeviceManager();
@@ -17,7 +18,7 @@ const DeviceList: React.FC = () => {
 
   return (
     <div className="device-list">
-      {devices.deviceList.map((device: any, index: number) => (
+      {devices.deviceList.map((device: BluetoothDevice, index: number) => (
         <div key={device.id || index} className="device-item">
           <div className="device-info">
             <div className="device-name">{device.name || 'Unknown Device'}</div>

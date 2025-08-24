@@ -1,7 +1,15 @@
 import noble from '@stoprocent/noble';
 import { EventEmitter } from 'events';
 import { FTMSService } from './FTMSService';
-import { CyclingMetrics, BluetoothDevice } from '../types/CyclingMetrics';
+import { CyclingMetrics, BluetoothDevice, DeviceInfo } from '../types/CyclingMetrics';
+
+interface NobleInterface {
+  state: string;
+  startScanningAsync(serviceUuids?: string[], allowDuplicates?: boolean): Promise<void>;
+  stopScanningAsync(): Promise<void>;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  removeAllListeners(event?: string): void;
+}
 
 interface NoblePeripheral {
   id: string;
@@ -13,8 +21,8 @@ interface NoblePeripheral {
   state: string;
   connect(callback: (error?: Error) => void): void;
   disconnect(callback?: (error?: Error) => void): void;
-  discoverServices(serviceUuids: string[], callback: (error?: Error, services?: any[]) => void): void;
-  on(event: string, listener: (...args: any[]) => void): void;
+  discoverServices(serviceUuids: string[], callback: (error?: Error, services?: unknown[]) => void): void;
+  on(event: string, listener: (...args: unknown[]) => void): void;
 }
 
 interface DiscoveredDevice {
@@ -22,7 +30,7 @@ interface DiscoveredDevice {
   name: string;
   peripheral: NoblePeripheral;
   isConnected: boolean;
-  deviceInfo: any;
+  deviceInfo: DeviceInfo;
   services: string[];
 }
 
@@ -141,8 +149,9 @@ export class BluetoothService extends EventEmitter {
 
   async scanForDevices(timeoutMs = 15000): Promise<BluetoothDevice[]> {
     return new Promise((resolve, reject) => {
-      if ((noble as any).state !== 'poweredOn') {
-        reject(new Error(`Bluetooth not ready. State: ${(noble as any).state}`));
+      const nobleInterface = noble as unknown as NobleInterface;
+      if (nobleInterface.state !== 'poweredOn') {
+        reject(new Error(`Bluetooth not ready. State: ${nobleInterface.state}`));
         return;
       }
 
@@ -245,7 +254,7 @@ export class BluetoothService extends EventEmitter {
 
   private async setupDeviceServices(device: DiscoveredDevice): Promise<void> {
     return new Promise((resolve, reject) => {
-      device.peripheral.discoverServices([], (error: any, services?: any[]) => {
+      device.peripheral.discoverServices([], (error: Error | null, services?: unknown[]) => {
         if (error) {
           reject(error);
           return;
@@ -285,9 +294,9 @@ export class BluetoothService extends EventEmitter {
     });
   }
 
-  private async setupFTMSService(device: DiscoveredDevice, ftmsService: any): Promise<void> {
+  private async setupFTMSService(device: DiscoveredDevice, ftmsService: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      ftmsService.discoverCharacteristics([], (error: any, characteristics: any[]) => {
+      (ftmsService as any).discoverCharacteristics([], (error: Error | null, characteristics: unknown[]) => {
         if (error) {
           reject(error);
           return;
@@ -314,7 +323,7 @@ export class BluetoothService extends EventEmitter {
             }
           });
 
-          indoorBikeDataChar.subscribe((subscribeError: any) => {
+          (indoorBikeDataChar as any).subscribe((subscribeError: Error | null) => {
             if (subscribeError) {
               console.error(`Failed to subscribe to FTMS notifications:`, subscribeError);
               reject(subscribeError);
@@ -331,9 +340,9 @@ export class BluetoothService extends EventEmitter {
     });
   }
 
-  private async setupHeartRateService(device: DiscoveredDevice, heartRateService: any): Promise<void> {
+  private async setupHeartRateService(device: DiscoveredDevice, heartRateService: unknown): Promise<void> {
     return new Promise((resolve, reject) => {
-      heartRateService.discoverCharacteristics([], (error: any, characteristics: any[]) => {
+      (heartRateService as any).discoverCharacteristics([], (error: Error | null, characteristics: unknown[]) => {
         if (error) {
           reject(error);
           return;
@@ -361,7 +370,7 @@ export class BluetoothService extends EventEmitter {
             }
           });
 
-          heartRateMeasurementChar.subscribe((subscribeError: any) => {
+          (heartRateMeasurementChar as any).subscribe((subscribeError: Error | null) => {
             if (subscribeError) {
               console.error(`Failed to subscribe to Heart Rate notifications:`, subscribeError);
               reject(subscribeError);
@@ -449,7 +458,7 @@ export class BluetoothService extends EventEmitter {
         console.log('Failed to connect to device.');
         return false;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Real connection failed:', error.message);
       return false;
     }

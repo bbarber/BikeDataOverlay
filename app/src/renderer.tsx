@@ -18,7 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Create React root and render the app
-  const root = ReactDOM.createRoot(document.getElementById('root')!);
+  const rootElement = document.getElementById('root');
+  if (!rootElement) {
+    console.error('Root element not found');
+    return;
+  }
+  const root = ReactDOM.createRoot(rootElement);
   root.render(<App />);
   
   console.log('✅ React app rendered successfully');
